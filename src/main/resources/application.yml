@@ -1,0 +1,21 @@
+spring:
+  mvc:
+    problemdetails:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://192.168.3.44:5432/dummy_json
+    username: postgres
+    password: 1801
+  jpa:
+    hibernate:
+      ddl-auto: update
+  security:
+    user:
+      password: 1801
+      name: duberly
+logging:
+  level:
+    org.springframework.security: trace
+
+jwt_key: "xf7uJ+l7cFNvx49KgfH7dG57xv9XMHPBUdF1rG7++6w="
+hostname: "duberlyguarnizo.com"
