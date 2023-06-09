@@ -27,7 +27,7 @@ public class CustomFilterChains {
                 .requestMatchers("/api/v1/public/**", "/api/v1/auth/authenticate", "/api/v1/json-content/**")
                 .permitAll()
                 .requestMatchers("api/v1/employees").hasAnyAuthority(EmployeeRole.ADMIN.name(), EmployeeRole.SUPERVISOR.name())
-                .requestMatchers("/api/v1/hello-admin").hasAuthority(EmployeeRole.ADMIN.name()) //test
+                //.requestMatchers("/api/v1/hello-admin").hasAuthority(EmployeeRole.ADMIN.name()) //test
                 .requestMatchers("/api/v1/hello-super").hasAuthority(EmployeeRole.SUPERVISOR.name()) //test
                 .anyRequest()
                 .authenticated());

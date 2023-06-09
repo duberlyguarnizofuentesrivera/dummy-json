@@ -29,7 +29,7 @@ public class JsonContentController {
 
     @GetMapping
     public ResponseEntity<List<JsonContentBasicDto>> getJsonContentDetail() {
-        var jsonDtoList = service.getAll();
+        var jsonDtoList = service.getAllByCurrentUser();
         if (jsonDtoList.isEmpty()) {
             return ResponseEntity.ok(Collections.emptyList());
         }
