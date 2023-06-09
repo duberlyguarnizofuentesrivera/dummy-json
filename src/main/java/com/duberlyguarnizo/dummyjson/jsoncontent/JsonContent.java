@@ -1,6 +1,6 @@
 package com.duberlyguarnizo.dummyjson.jsoncontent;
 
-import com.duberlyguarnizo.dummyjson.Auditing.AuditableEntity;
+import com.duberlyguarnizo.dummyjson.auditing.AuditableEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

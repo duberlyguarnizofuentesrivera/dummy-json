@@ -1,4 +1,4 @@
-package com.duberlyguarnizo.dummyjson.Auditing;
+package com.duberlyguarnizo.dummyjson.auditing;
 
 import com.duberlyguarnizo.dummyjson.employee.Employee;
 import com.duberlyguarnizo.dummyjson.employee.EmployeeRepository;

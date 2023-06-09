@@ -3,6 +3,7 @@ package com.duberlyguarnizo.dummyjson.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +15,8 @@ import java.util.function.Function;
 @Service
 public class JwtUtil {
     private static final int EXPIRATION_TIME = 1000 * 60 * 60 * 10;
-    private static final String JWT_KEY = "xf7uJ+l7cFNvx49KgfH7dG57xv9XMHPBUdF1rG7++6w="; //TODO: extract this to environmet
+    @Value("${jwt_key}")
+    private String JWT_KEY;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);

@@ -1,6 +1,6 @@
 package com.duberlyguarnizo.dummyjson.jsoncontent;
 
-import com.duberlyguarnizo.dummyjson.Auditing.CustomAuditorAware;
+import com.duberlyguarnizo.dummyjson.auditing.CustomAuditorAware;
 import com.duberlyguarnizo.dummyjson.exceptions.IdNotFoundException;
 import com.duberlyguarnizo.dummyjson.exceptions.NotOwnedObjectException;
 import com.duberlyguarnizo.dummyjson.exceptions.RepositoryException;

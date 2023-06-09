@@ -1,4 +1,4 @@
-package com.duberlyguarnizo.dummyjson.Auditing;
+package com.duberlyguarnizo.dummyjson.auditing;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
