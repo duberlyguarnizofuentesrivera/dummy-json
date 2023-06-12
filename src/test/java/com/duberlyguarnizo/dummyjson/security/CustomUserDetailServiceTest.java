@@ -1,8 +1,8 @@
 package com.duberlyguarnizo.dummyjson.security;
 
-import com.duberlyguarnizo.dummyjson.employee.Employee;
-import com.duberlyguarnizo.dummyjson.employee.EmployeeRepository;
-import com.duberlyguarnizo.dummyjson.employee.EmployeeRole;
+import com.duberlyguarnizo.dummyjson.appuser.AppUser;
+import com.duberlyguarnizo.dummyjson.appuser.AppUserRepository;
+import com.duberlyguarnizo.dummyjson.appuser.AppUserRole;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,42 +23,42 @@ class CustomUserDetailServiceTest {
     private CustomUserDetailService customUserDetailService;
 
     @Autowired
-    private EmployeeRepository employeeRepository;
+    private AppUserRepository appUserRepository;
 
     @Autowired
     private PasswordEncoder pwdEncoder;
 
     @BeforeEach
     void setUp() {
-        Employee user = Employee.builder()
+        AppUser user = AppUser.builder()
                 .names("Jhon Doe")
                 .idCard("987654321")
                 .email("doe@mail.com")
                 .isActive(true)
                 .username("jhondoe")
                 .password(pwdEncoder.encode("doejhon"))
-                .role(EmployeeRole.SUPERVISOR)
+                .role(AppUserRole.SUPERVISOR)
                 .build();
-        employeeRepository.save(user);
+        appUserRepository.save(user);
 
     }
 
     @AfterEach
     void destroy() {
-        employeeRepository.deleteAll();
+        appUserRepository.deleteAll();
     }
 
 
     @Test
-    @DisplayName("UserDetailService returns correct Employee with a username that does exist")
+    @DisplayName("UserDetailService returns correct appuser with a username that does exist")
     void testLoadUserByUsername() throws UsernameNotFoundException {
         // Arrange
         String username = "jhondoe";
         // Act
-        Employee employee = (Employee) customUserDetailService.loadUserByUsername(username);
+        AppUser appUser = (AppUser) customUserDetailService.loadUserByUsername(username);
 
         // Assert
-        assertEquals(username, employee.getUsername());
+        assertEquals(username, appUser.getUsername());
     }
 
     @Test

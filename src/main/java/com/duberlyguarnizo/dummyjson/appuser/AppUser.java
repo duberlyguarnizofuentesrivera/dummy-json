@@ -1,5 +1,6 @@
-package com.duberlyguarnizo.dummyjson.employee;
+package com.duberlyguarnizo.dummyjson.appuser;
 
+import com.duberlyguarnizo.dummyjson.auditing.AuditableEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,7 +18,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Employee implements UserDetails {
+public class AppUser extends AuditableEntity implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -28,7 +29,7 @@ public class Employee implements UserDetails {
     private String idCard;
     @NotNull
     @Enumerated(EnumType.STRING)
-    private EmployeeRole role;
+    private AppUserRole role;
     private boolean isActive;
     @NotBlank
     private String username;

@@ -1,6 +1,6 @@
 package com.duberlyguarnizo.dummyjson.security;
 
-import com.duberlyguarnizo.dummyjson.employee.EmployeeRole;
+import com.duberlyguarnizo.dummyjson.appuser.AppUserRole;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,9 +26,9 @@ public class CustomFilterChains {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/public/**", "/api/v1/auth/authenticate", "/api/v1/json-content/**")
                 .permitAll()
-                .requestMatchers("api/v1/employees").hasAnyAuthority(EmployeeRole.ADMIN.name(), EmployeeRole.SUPERVISOR.name())
-                //.requestMatchers("/api/v1/hello-admin").hasAuthority(EmployeeRole.ADMIN.name()) //test
-                .requestMatchers("/api/v1/hello-super").hasAuthority(EmployeeRole.SUPERVISOR.name()) //test
+                .requestMatchers("api/v1/employees").hasAnyAuthority(AppUserRole.ADMIN.name(), AppUserRole.SUPERVISOR.name())
+                //.requestMatchers("/api/v1/hello-admin").hasAuthority(AppUserRole.ADMIN.name()) //test
+                .requestMatchers("/api/v1/hello-super").hasAuthority(AppUserRole.SUPERVISOR.name()) //test
                 .anyRequest()
                 .authenticated());
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

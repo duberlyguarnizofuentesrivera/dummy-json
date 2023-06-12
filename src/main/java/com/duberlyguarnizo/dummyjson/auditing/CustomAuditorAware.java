@@ -1,7 +1,7 @@
 package com.duberlyguarnizo.dummyjson.auditing;
 
-import com.duberlyguarnizo.dummyjson.employee.Employee;
-import com.duberlyguarnizo.dummyjson.employee.EmployeeRepository;
+import com.duberlyguarnizo.dummyjson.appuser.AppUser;
+import com.duberlyguarnizo.dummyjson.appuser.AppUserRepository;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
@@ -12,10 +12,10 @@ import java.util.Optional;
 
 @Component
 public class CustomAuditorAware implements AuditorAware<Long> {
-    private final EmployeeRepository employeeRepository;
+    private final AppUserRepository appUserRepository;
 
-    public CustomAuditorAware(EmployeeRepository employeeRepository) {
-        this.employeeRepository = employeeRepository;
+    public CustomAuditorAware(AppUserRepository appUserRepository) {
+        this.appUserRepository = appUserRepository;
     }
 
     @Override
@@ -26,12 +26,12 @@ public class CustomAuditorAware implements AuditorAware<Long> {
         if (authentication == null) {
             return Optional.empty();
         } else {
-            Employee principal =
-                    (Employee) authentication
+            AppUser principal =
+                    (AppUser) authentication
                             .getPrincipal();
             String username = principal.getUsername();
-            Optional<Employee> currentUser = employeeRepository.findByUsernameIgnoreCase(username);
-            return currentUser.map(Employee::getId);
+            Optional<AppUser> currentUser = appUserRepository.findByUsernameIgnoreCase(username);
+            return currentUser.map(AppUser::getId);
         }
     }
 }

@@ -1,6 +1,6 @@
-package com.duberlyguarnizo.dummyjson.employee.dto;
+package com.duberlyguarnizo.dummyjson.appuser.dto;
 
-import com.duberlyguarnizo.dummyjson.employee.EmployeeRole;
+import com.duberlyguarnizo.dummyjson.appuser.AppUserRole;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class EmployeeRegistrationDto {
+public class AppUserRegistrationDto {
     @NotBlank
     private String names;
     @NotBlank
@@ -19,5 +19,5 @@ public class EmployeeRegistrationDto {
     @NotBlank
     private String idCard;
     @NotNull
-    private EmployeeRole role;
+    private AppUserRole role;
 }

@@ -1,6 +1,6 @@
 package com.duberlyguarnizo.dummyjson.security;
 
-import com.duberlyguarnizo.dummyjson.employee.Employee;
+import com.duberlyguarnizo.dummyjson.appuser.AppUser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,13 +33,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             username = jwtUtil.extractUsername(jwt);
         }
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            Employee employee = (Employee) userDetailService.loadUserByUsername(username);
-            if (jwtUtil.validateToken(jwt, employee)) {
+            AppUser appUser = (AppUser) userDetailService.loadUserByUsername(username);
+            if (jwtUtil.validateToken(jwt, appUser)) {
                 UsernamePasswordAuthenticationToken upAuthenticationToken =
                         new UsernamePasswordAuthenticationToken(
-                                employee,
+                                appUser,
                                 null,
-                                employee.getAuthorities()
+                                appUser.getAuthorities()
                         );
                 upAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(upAuthenticationToken);

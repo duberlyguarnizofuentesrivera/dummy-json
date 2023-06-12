@@ -1,6 +1,6 @@
 package com.duberlyguarnizo.dummyjson.security;
 
-import com.duberlyguarnizo.dummyjson.employee.Employee;
+import com.duberlyguarnizo.dummyjson.appuser.AppUser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,7 @@ class JwtRequestFilterTest {
         filter.doFilterInternal(request, response, mock(FilterChain.class));
 
         verify(jwtUtil, times(0)).extractUsername(anyString());
-        verify(jwtUtil, times(0)).validateToken(anyString(), any(Employee.class));
+        verify(jwtUtil, times(0)).validateToken(anyString(), any(AppUser.class));
     }
 
     @Test
@@ -52,6 +52,6 @@ class JwtRequestFilterTest {
 
         filter.doFilterInternal(request, response, mock(FilterChain.class));
         verify(jwtUtil, times(1)).extractUsername(anyString());
-        verify(jwtUtil, times(0)).validateToken(anyString(), any(Employee.class));
+        verify(jwtUtil, times(0)).validateToken(anyString(), any(AppUser.class));
     }
 }

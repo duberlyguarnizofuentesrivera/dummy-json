@@ -10,6 +10,7 @@ import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentDetailDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentMapper;
 import jakarta.validation.Valid;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -49,6 +50,14 @@ public class JsonContentService {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')") //Only admins and supervisors can list all JSONs
+    public List<JsonContentBasicDto> getAllByAnyUser() {
+        return repository.findAll()
+                .stream()
+                .map(mapper::toBasicDto)
+                .toList();
+    }
+
     public Long create(@Valid JsonContentCreationDto jsonDto) {
         var json = mapper.toEntity(jsonDto);
         try {
@@ -61,42 +70,32 @@ public class JsonContentService {
 
     public void update(@Valid JsonContentCreationDto jsonDto) {
         //TODO: refactor to use @POSTAUTHORIZE
-        var currentAuditor = auditorAware.getCurrentAuditor();
-        if (currentAuditor.isEmpty()) {
-            throw new AccessDeniedException("You do not have the permissions to update this resource.");
-        } else {
-            var json = repository.findById(jsonDto.getId());
-            if (json.isEmpty()) {
-                throw new IdNotFoundException("No JSON content found with id: " + jsonDto.getId() + " in the database");
-            } else {
-                Long currentUserId = currentAuditor.get();
-                JsonContent jsonObject = json.get();
-                if (jsonObject.getCreatedBy() != currentUserId) {
-                    throw new NotOwnedObjectException("You do not have the permissions to update this resource.");
-                }
-                var updatedJson = mapper.partialUpdate(jsonDto, jsonObject);
-                repository.save(updatedJson);
-            }
+        var currentAuditorId = auditorAware
+                .getCurrentAuditor()
+                .orElseThrow(() -> new AccessDeniedException("You do not have the permissions to update this resource."));
+
+        var jsonContent = repository.findById(jsonDto.getId()).orElseThrow(() -> new IdNotFoundException("No JSON content found with id: " + jsonDto.getId() + " in the database"));
+        if (!jsonContent.getCreatedBy().equals(currentAuditorId)) {
+            throw new NotOwnedObjectException("You do not have the permissions to update this resource.");
         }
+        var updatedJson = mapper.partialUpdate(jsonDto, jsonContent);
+        repository.save(updatedJson);
     }
 
+
     public void delete(Long id) {
-        var currentAuditor = auditorAware.getCurrentAuditor();
-        if (currentAuditor.isEmpty()) {
-            throw new AccessDeniedException("You do not have the permissions to delete this resource.");
-        } else {
-            var json = repository.findById(id);
-            if (json.isEmpty()) {
-                throw new IdNotFoundException("No JSON content found with id: " + id + " in the database");
-            } else {
-                Long currentUserId = currentAuditor.get();
-                JsonContent jsonObject = json.get();
-                if (jsonObject.getCreatedBy() != currentUserId) {
-                    throw new NotOwnedObjectException("You do not have the permissions to delete this resource.");
-                }
-                repository.deleteById(id);
-            }
+        var currentAuditorId = auditorAware
+                .getCurrentAuditor()
+                .orElseThrow(() -> new AccessDeniedException("You do not have the permissions to delete this resource."));
+        var jsonContent = repository
+                .findById(id)
+                .orElseThrow(() -> new IdNotFoundException("No JSON content found with id: " + id + " in the database"));
+        if (!jsonContent
+                .getCreatedBy()
+                .equals(currentAuditorId)) {
+            throw new NotOwnedObjectException("You do not have the permissions to delete this resource.");
         }
+        repository.deleteById(id);
     }
 }
 

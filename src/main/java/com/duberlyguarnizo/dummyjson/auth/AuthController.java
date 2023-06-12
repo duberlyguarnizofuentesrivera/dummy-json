@@ -1,6 +1,6 @@
 package com.duberlyguarnizo.dummyjson.auth;
 
-import com.duberlyguarnizo.dummyjson.employee.Employee;
+import com.duberlyguarnizo.dummyjson.appuser.AppUser;
 import com.duberlyguarnizo.dummyjson.security.CustomUserDetailService;
 import com.duberlyguarnizo.dummyjson.security.JwtUtil;
 import lombok.extern.java.Log;
@@ -34,8 +34,8 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
                         request.getPassword()));
-        final Employee employee = (Employee) userDetailService.loadUserByUsername(request.getUsername());
-        final String jwt = jwtUtil.generateToken(employee);
+        final AppUser appUser = (AppUser) userDetailService.loadUserByUsername(request.getUsername());
+        final String jwt = jwtUtil.generateToken(appUser);
         AuthResponse response = new AuthResponse(jwt);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
