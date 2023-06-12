@@ -2,6 +2,7 @@ package com.duberlyguarnizo.dummyjson.exceptions;
 
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,14 +21,19 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     @Value("${hostname}")
     private String hostname;
     private static final String HOSTNAME_KEY_TEXT = "hostname";
+    private final MessageSource messageSource;
+
+    public CustomResponseEntityExceptionHandler(MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
 
     //4xx errors
     @ExceptionHandler(AuthenticationException.class)
     public ProblemDetail handleWrongAuthCredentials(Exception e, WebRequest request) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(401));
         if (e instanceof BadCredentialsException) {
-            pd.setTitle("Wrong Credentials");
-            pd.setDetail("Incorrect username or password");
+            pd.setTitle(messageSource.getMessage("exception_wrong_credentials", null, request.getLocale()));
+            pd.setDetail(messageSource.getMessage("exception_wrong_credentials_detail", null, request.getLocale()));
         } else if (e instanceof DisabledException) {
             pd.setTitle("User is disabled");
             pd.setDetail("The user cannot sign-in because is disabled.");
@@ -45,10 +51,9 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
 
     @ExceptionHandler(AccessDeniedException.class)
     public ProblemDetail handleAccessDeniedException(Exception e, WebRequest request) {
-        log.warning("Access denied exception: ENTERING EXCEPTION HANDLER");
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(401));
-        pd.setTitle("Access denied");
-        pd.setDetail("You don't have permission to perform this action");
+        pd.setTitle(messageSource.getMessage("exception_access_denied", null, request.getLocale()));
+        pd.setDetail(messageSource.getMessage("exception_access_denied_detail", null, request.getLocale()));
         pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
         //TODO: add more custom properties to be managed by frontend and the remaining exceptions related to credentials
         return pd;
@@ -57,8 +62,8 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     @ExceptionHandler(NotOwnedObjectException.class)
     public ProblemDetail handleNotTheOwnerException(Exception e, WebRequest request) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(403));
-        pd.setTitle("Not the owner");
-        pd.setDetail("The current user cannot perform the action because it is not the owner");
+        pd.setTitle(messageSource.getMessage("exception_not_the_owner", null, request.getLocale()));
+        pd.setDetail(messageSource.getMessage("exception_not_the_owner_detail", null, request.getLocale()));
         pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
         return pd;
     }
@@ -67,7 +72,7 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     @ExceptionHandler(IdNotFoundException.class)
     public ProblemDetail handleIdNotFoundException(Exception e, WebRequest request) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(404));
-        pd.setTitle("Id not found");
+        pd.setTitle(messageSource.getMessage("exception_id_not_found", null, request.getLocale()));
         pd.setDetail(e.getMessage());
         pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
         return pd;
@@ -78,7 +83,7 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     @ExceptionHandler(RepositoryException.class)
     public ProblemDetail handleRepositoryException(Exception e, WebRequest request) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(500));
-        pd.setTitle("Server error");
+        pd.setTitle(messageSource.getMessage("exception_server_error", null, request.getLocale()));
         pd.setDetail(e.getMessage());
         pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
         return pd;

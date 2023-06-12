@@ -1,4 +1,6 @@
 spring:
+  messages:
+    basename: "lang/messages"
   mvc:
     problemdetails:
       enabled: true
@@ -14,9 +16,17 @@ spring:
     user:
       password: 1801
       name: duberly
+
+server:
+  servlet:
+    encoding:
+      force: true
+
 logging:
   level:
     org.springframework.security: trace
 
 jwt_key: ${JWT_KEY}
 hostname: "duberlyguarnizo.com"
+
+

@@ -28,8 +28,17 @@ public class JsonContentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<JsonContentBasicDto>> getJsonContentDetail() {
+    public ResponseEntity<List<JsonContentBasicDto>> getJsonContentUserList() {
         var jsonDtoList = service.getAllByCurrentUser();
+        if (jsonDtoList.isEmpty()) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+        return ResponseEntity.ok(jsonDtoList);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<JsonContentBasicDto>> getJsonContentAllList() {
+        var jsonDtoList = service.getAllByAnyUser();
         if (jsonDtoList.isEmpty()) {
             return ResponseEntity.ok(Collections.emptyList());
         }

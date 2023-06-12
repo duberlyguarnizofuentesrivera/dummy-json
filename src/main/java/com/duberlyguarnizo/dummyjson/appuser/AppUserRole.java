@@ -1,24 +1,17 @@
 package com.duberlyguarnizo.dummyjson.appuser;
 
 public enum AppUserRole {
-    ADMIN("Admin", "Administrador", "Administrador"),
-    SUPERVISOR("Supervisor", "Supervisor", "Supervisor"),
-    USER("User", "Usuario", "Usuario");
-    private final String labelEn;
-    private final String labelEs;
-    private final String labelPt;
+    ADMIN("enums.AppUserRole.ADMIN"),
+    SUPERVISOR("enums.AppUserRole.SUPERVISOR"),
+    USER("enums.AppUserRole.USER");
+    private String label;
 
-    AppUserRole(String enLabel, String esLabel, String ptLabel) {
-        this.labelEn = enLabel;
-        this.labelEs = esLabel;
-        this.labelPt = ptLabel;
+    AppUserRole(String LocalizedLabel) {
+        this.label = LocalizedLabel;
     }
 
-    public String getLabel(String language) {
-        return switch (language) {
-            case "es" -> labelEs;
-            case "pt" -> labelPt;
-            default -> labelEn;
-        };
+    @Override
+    public String toString() {
+        return label;
     }
 }

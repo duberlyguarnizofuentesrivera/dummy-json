@@ -42,7 +42,7 @@ public class AppUserService {
         try {
             return appUserRepository.save(convertedAppUser).getId();
         } catch (IllegalArgumentException e) {
-            throw new RepositoryException("Unable to create appuser, invalid data.");
+            throw new RepositoryException("Unable to create user, data is invalid.");
         } catch (OptimisticLockingFailureException e) {
             throw new RepositoryException("Optimistic locking error, please try again");
         }
@@ -55,7 +55,7 @@ public class AppUserService {
         if (currentAuditor.isEmpty()) {
             throw new AccessDeniedException("You do not have the permissions to delete this resource.");
         } else {
-            var employee = appUserRepository.findById(id).orElseThrow(() -> new IdNotFoundException("No appuser found with id: " + id + " in the database"));
+            var employee = appUserRepository.findById(id).orElseThrow(() -> new IdNotFoundException("No user found with id: " + id + " in the database."));
             Long currentUserId = currentAuditor.get();
             if (employee.getId().equals(currentUserId)) {
                 throw new NotOwnedObjectException("You cannot  delete your own user!");
