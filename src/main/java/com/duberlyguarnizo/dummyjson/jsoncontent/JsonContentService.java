@@ -12,12 +12,12 @@ import jakarta.validation.Valid;
 import lombok.extern.java.Log;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
-
-import java.util.List;
 
 @Log
 @Service
@@ -47,25 +47,33 @@ public class JsonContentService {
         }
     }
 
-    public List<JsonContentBasicDto> getAllByCurrentUser() {
+    public Page<JsonContentBasicDto> getByName(@Valid String name, Pageable page) {
+        var json = repository.findByNameContainsIgnoreCase(name, page);
+        return json.map(mapper::toBasicDto);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
+    public Page<JsonContentBasicDto> getAllByUserId(Long id, Pageable page) {
+        var jsonList = repository.findAllByCreatedBy(id, page);
+        return jsonList.map(mapper::toBasicDto);
+    }
+
+    public Page<JsonContentBasicDto> getAllByCurrentUser(Pageable page) {
         var currentAuditor = auditorAware.getCurrentAuditor();
+        //TODO: verify if LocaleContext.getLocale() is null
         if (currentAuditor.isEmpty()) {
             throw new AccessDeniedException(messages.getMessage("error_list_no_permissions", null, LocaleContextHolder.getLocaleContext().getLocale()));
         } else {
             Long currentUserId = currentAuditor.get();
-            return repository.findAllByCreatedBy(currentUserId)
-                    .stream()
-                    .map(mapper::toBasicDto)
-                    .toList();
+            return repository.findAllByCreatedBy(currentUserId, page)
+                    .map(mapper::toBasicDto);
         }
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')") //Only admins and supervisors can list all JSONs
-    public List<JsonContentBasicDto> getAllByAnyUser() {
-        return repository.findAll()
-                .stream()
-                .map(mapper::toBasicDto)
-                .toList();
+    public Page<JsonContentBasicDto> getAllByAnyUser(Pageable page) {
+        return repository.findAll(page)
+                .map(mapper::toBasicDto);
     }
 
     public Long create(@Valid JsonContentCreationDto jsonDto) {
@@ -79,7 +87,7 @@ public class JsonContentService {
     }
 
     public void update(@Valid JsonContentCreationDto jsonDto) {
-        //TODO: refactor to use @POSTAUTHORIZE
+        //We could use @PostAuthorize, but that would remove our ability to throw ProblemDetail exceptions
         var currentAuditorId = auditorAware
                 .getCurrentAuditor()
                 .orElseThrow(() -> new AccessDeniedException("You do not have the permissions to update this resource."));
@@ -107,5 +115,8 @@ public class JsonContentService {
         }
         repository.deleteById(id);
     }
+    //TODO: add ADMIN/SUPER delete & update endpoint
+
+
 }
 

@@ -93,4 +93,5 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     //TODO: add auth error (different roles)
     //TODO: add jsonwebtoken related exceptions (like ExpiredJwtException)
     //TODO: try to handle MethodArgumentNotValidException
+    //TODO: try to handle HttpMessageNotReadableException
 }

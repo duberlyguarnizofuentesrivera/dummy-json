@@ -9,6 +9,7 @@ import lombok.Data;
 @Data
 @Builder
 public class AppUserRegistrationDto {
+    private Long id;
     @NotBlank
     private String names;
     @NotBlank

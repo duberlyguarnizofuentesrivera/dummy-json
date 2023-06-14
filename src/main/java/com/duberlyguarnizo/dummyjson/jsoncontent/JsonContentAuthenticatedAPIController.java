@@ -3,23 +3,25 @@ package com.duberlyguarnizo.dummyjson.jsoncontent;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentBasicDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentCreationDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentDetailDto;
+import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
-import java.util.List;
-
 @Controller
-@RequestMapping("/api/v1/json-content")
-public class JsonContentController {
+@RequestMapping("/api/v1/authenticated/json")
+public class JsonContentAuthenticatedAPIController {
     JsonContentService service;
 
-    public JsonContentController(JsonContentService service) {
+    public JsonContentAuthenticatedAPIController(JsonContentService service) {
         this.service = service;
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<JsonContentDetailDto> getJsonContentDetail(@PathVariable Long id) {
@@ -28,26 +30,21 @@ public class JsonContentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<JsonContentBasicDto>> getJsonContentUserList() {
-        var jsonDtoList = service.getAllByCurrentUser();
-        if (jsonDtoList.isEmpty()) {
-            return ResponseEntity.ok(Collections.emptyList());
-        }
+    public ResponseEntity<Page<JsonContentBasicDto>> getJsonContentCurrentUserList(@RequestParam(required = false, defaultValue = "0") int page,
+                                                                                   @RequestParam(required = false, defaultValue = "15") int size,
+                                                                                   @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
+        PageRequest pageRequest = PageRequest.of(page,
+                size,
+                Sort.by(ControllerUtils.processPageSort(sort)));
+        var jsonDtoList = service.getAllByCurrentUser(pageRequest);
         return ResponseEntity.ok(jsonDtoList);
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<List<JsonContentBasicDto>> getJsonContentAllList() {
-        var jsonDtoList = service.getAllByAnyUser();
-        if (jsonDtoList.isEmpty()) {
-            return ResponseEntity.ok(Collections.emptyList());
-        }
-        return ResponseEntity.ok(jsonDtoList);
-    }
 
     @PostMapping
     public ResponseEntity<Long> createJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
         Long id = service.create(jsonDto);
+        //TODO: JSON content name must be unique for the user
         return new ResponseEntity<>(id, HttpStatus.CREATED);
     }
 

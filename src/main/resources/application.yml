@@ -4,18 +4,14 @@ spring:
   mvc:
     problemdetails:
       enabled: true
-  #  datasource:
-  #    url: jdbc:postgresql://192.168.3.44:5432/dummy_json
-  #    username: postgres
-  #    password: 1801
   jpa:
     hibernate:
       ddl-auto: update
     generate-ddl: true
-  security:
-    user:
-      password: 1801
-      name: duberly
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
 
 server:
   servlet:
