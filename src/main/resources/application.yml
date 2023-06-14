@@ -1,22 +1,28 @@
 spring:
+  messages:
+    basename: "lang/messages"
   mvc:
     problemdetails:
       enabled: true
-  #  datasource:
-  #    url: jdbc:postgresql://192.168.3.44:5432/dummy_json
-  #    username: postgres
-  #    password: 1801
   jpa:
     hibernate:
       ddl-auto: update
     generate-ddl: true
-  security:
-    user:
-      password: 1801
-      name: duberly
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+
+server:
+  servlet:
+    encoding:
+      force: true
+
 logging:
   level:
     org.springframework.security: trace
 
 jwt_key: ${JWT_KEY}
 hostname: "duberlyguarnizo.com"
+
+

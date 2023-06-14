@@ -24,11 +24,10 @@ public class CustomFilterChains {
         http.cors(Customizer.withDefaults());
         http.csrf(csrf -> csrf.disable());
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/public/**", "/api/v1/auth/authenticate", "/api/v1/json-content/**")
+                .requestMatchers("/api/v1/public/**", "/api/v1/test/**", "/api/v1/auth/**")
                 .permitAll()
-                .requestMatchers("api/v1/employees").hasAnyAuthority(AppUserRole.ADMIN.name(), AppUserRole.SUPERVISOR.name())
-                //.requestMatchers("/api/v1/hello-admin").hasAuthority(AppUserRole.ADMIN.name()) //test
-                .requestMatchers("/api/v1/hello-super").hasAuthority(AppUserRole.SUPERVISOR.name()) //test
+                .requestMatchers("/api/v1/authenticated/**").authenticated()
+                .requestMatchers("/api/v1/management/**").hasAnyAuthority(AppUserRole.ADMIN.name(), AppUserRole.SUPERVISOR.name())
                 .anyRequest()
                 .authenticated());
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
