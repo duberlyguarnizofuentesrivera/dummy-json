@@ -24,7 +24,18 @@ public class CustomFilterChains {
         http.cors(Customizer.withDefaults());
         http.csrf(csrf -> csrf.disable());
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/public/**", "/api/v1/test/**", "/api/v1/auth/**")
+                .requestMatchers(
+                        "/api/v1/public/**",
+                        "/api/v1/test/**",
+                        "/api/v1/auth/**",
+                        "/swagger-ui/**",
+                        "/v2/api-docs",
+                        "/v3/api-docs",
+                        "/v3/api-docs/**",
+                        "/swagger-resources",
+                        "/swagger-resources/**",
+                        "/configuration/**",
+                        "/webjars/**")
                 .permitAll()
                 .requestMatchers("/api/v1/authenticated/**").authenticated()
                 .requestMatchers("/api/v1/management/**").hasAnyAuthority(AppUserRole.ADMIN.name(), AppUserRole.SUPERVISOR.name())

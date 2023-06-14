@@ -4,6 +4,8 @@ import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserBasicDto;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserDetailDto;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserRegistrationDto;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/management/managers")
+@SecurityRequirement(name = "Authorization Bearer")
+@Tag(name = "Managers", description = "Endpoints of CRUD methods  for managers")
 public class AppUserApiController {
     private final AppUserService appUserService;
 

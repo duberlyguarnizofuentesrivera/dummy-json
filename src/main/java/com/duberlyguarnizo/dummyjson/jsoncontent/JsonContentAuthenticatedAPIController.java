@@ -4,17 +4,20 @@ import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentBasicDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentCreationDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentDetailDto;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+@RestController
 @RequestMapping("/api/v1/authenticated/json")
+@SecurityRequirement(name = "Authorization Bearer")
+@Tag(name = "Authenticated", description = "Endpoints for authenticated users, specifically for managing JSON content")
 public class JsonContentAuthenticatedAPIController {
     JsonContentService service;
 

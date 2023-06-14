@@ -4,16 +4,21 @@ import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentBasicDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentCreationDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentDetailDto;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+@RestController
 @RequestMapping("/api/v1/management/json")
+@SecurityRequirement(name = "Authorization Bearer")
+@PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
+@Tag(name = "Management", description = "Endpoints for managers to administer JSON content created by users")
 public class JsonContentManagementAPIController {
     JsonContentService service;
 

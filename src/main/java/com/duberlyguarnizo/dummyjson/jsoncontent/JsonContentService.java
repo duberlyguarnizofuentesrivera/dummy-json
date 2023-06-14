@@ -58,6 +58,7 @@ public class JsonContentService {
         return jsonList.map(mapper::toBasicDto);
     }
 
+    @PreAuthorize("isAuthenticated()")
     public Page<JsonContentBasicDto> getAllByCurrentUser(Pageable page) {
         var currentAuditor = auditorAware.getCurrentAuditor();
         //TODO: verify if LocaleContext.getLocale() is null
@@ -76,6 +77,7 @@ public class JsonContentService {
                 .map(mapper::toBasicDto);
     }
 
+    @PreAuthorize("isAuthenticated()")
     public Long create(@Valid JsonContentCreationDto jsonDto) {
         var json = mapper.toEntity(jsonDto);
         try {
@@ -86,6 +88,7 @@ public class JsonContentService {
         }
     }
 
+    @PreAuthorize("isAuthenticated()")
     public void update(@Valid JsonContentCreationDto jsonDto) {
         //We could use @PostAuthorize, but that would remove our ability to throw ProblemDetail exceptions
         var currentAuditorId = auditorAware
@@ -100,7 +103,7 @@ public class JsonContentService {
         repository.save(updatedJson);
     }
 
-
+    @PreAuthorize("isAuthenticated()")
     public void delete(Long id) {
         var currentAuditorId = auditorAware
                 .getCurrentAuditor()
