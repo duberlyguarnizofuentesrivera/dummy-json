@@ -47,19 +47,18 @@ public class JsonContentAuthenticatedAPIController {
     @PostMapping
     public ResponseEntity<Long> createJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
         Long id = service.create(jsonDto);
-        //TODO: JSON content name must be unique for the user
         return new ResponseEntity<>(id, HttpStatus.CREATED);
     }
 
     @PutMapping
     public ResponseEntity<Void> updateJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
-        service.update(jsonDto);
+        service.updateOwnJsonContent(jsonDto);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteJsonContentDetail(@PathVariable Long id) {
-        service.delete(id);
+        service.deleteOwnJsonContent(id);
         return ResponseEntity.noContent().build();
     }
 }

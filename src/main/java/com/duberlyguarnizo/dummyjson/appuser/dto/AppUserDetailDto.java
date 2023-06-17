@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Value;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -27,6 +28,9 @@ public class AppUserDetailDto implements Serializable {
     @NotNull
     AppUserRole role;
     boolean isActive;
+    @Serial
+    private static final long serialVersionUID = 989L;
     @NotBlank
     String username;
+    boolean isLocked;
 }

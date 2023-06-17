@@ -5,8 +5,6 @@ import org.mapstruct.*;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING)
 public interface AppUserMapper {
-//    AppUserMapper INSTANCE = Mappers.getMapper(AppUserMapper.class);
-
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     AppUser toEntity(AppUserRegistrationDto registrationDto);
 

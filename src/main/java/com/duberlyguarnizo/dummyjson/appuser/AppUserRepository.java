@@ -14,4 +14,6 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 // See https://stackoverflow.com/questions/42315960/stackoverflowexception-in-spring-data-jpa-app-with-spring-security-auditoraware
 // to review a better way, but harder, to do this... (Duberly Guarnizo, 2023).
     Optional<AppUser> findByUsernameIgnoreCase(String username);
+
+    Optional<AppUser> findByUsernameContainsIgnoreCase(String username);
 }

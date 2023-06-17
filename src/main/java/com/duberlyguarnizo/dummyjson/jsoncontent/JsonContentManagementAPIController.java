@@ -44,7 +44,6 @@ public class JsonContentManagementAPIController {
         return ResponseEntity.ok(jsonDto);
     }
 
-    //TODO: add get mapping for all json content by any user by username
     @GetMapping()
     public ResponseEntity<Page<JsonContentBasicDto>> getJsonContentAllList(@RequestParam(required = false, defaultValue = "0") int page,
                                                                            @RequestParam(required = false, defaultValue = "15") int size,
@@ -58,13 +57,13 @@ public class JsonContentManagementAPIController {
 
     @PutMapping
     public ResponseEntity<Void> updateJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
-        service.update(jsonDto);
+        service.updateOwnJsonContent(jsonDto);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteJsonContentDetail(@PathVariable Long id) {
-        service.delete(id);
+        service.deleteOwnJsonContent(id);
         return ResponseEntity.noContent().build();
     }
 }

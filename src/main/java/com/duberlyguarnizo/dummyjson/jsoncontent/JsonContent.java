@@ -8,6 +8,7 @@ import org.hibernate.Hibernate;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.URL;
 
+import java.io.Serial;
 import java.util.Objects;
 
 @Entity
@@ -30,6 +31,9 @@ public class JsonContent extends AuditableEntity {
 
     @URL(protocol = "")
     String path;
+
+    @Serial
+    private static final long serialVersionUID = 990L;
 
     @Override
     public boolean equals(Object o) {
