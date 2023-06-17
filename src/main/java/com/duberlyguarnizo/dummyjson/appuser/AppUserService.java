@@ -28,7 +28,7 @@ public class AppUserService {
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public AppUserDetailDto getManagerById(Long id) {
-        return mapper.toDetailDto(appUserRepository.findById(id).orElseThrow(() -> new IdNotFoundException("No appuser found with id: " + id + " in the database")));
+        return mapper.toDetailDto(appUserRepository.findById(id).orElseThrow(() -> new IdNotFoundException("No Manager found with id: " + id + " in the database")));
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
@@ -40,7 +40,9 @@ public class AppUserService {
     public Long createManager(@Valid AppUserRegistrationDto registrationDto) throws RepositoryException {
         registrationDto.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
         AppUser convertedAppUser = mapper.toEntity(registrationDto);
+        //TODO: verify that the username is unique
         convertedAppUser.setActive(true);
+        convertedAppUser.setLocked(false);
         try {
             return appUserRepository.save(convertedAppUser).getId();
         } catch (IllegalArgumentException e) {
@@ -54,6 +56,7 @@ public class AppUserService {
     public void updateManager(AppUserRegistrationDto registrationDto) {
         var manager = appUserRepository.findById(registrationDto.getId()).orElseThrow(() -> new IdNotFoundException("No manager found with id: " + registrationDto.getId() + " in the database."));
         var updatedManager = mapper.partialUpdate(registrationDto, manager);
+        //TODO: verify change in username (must be unique)
         appUserRepository.save(updatedManager);
     }
 

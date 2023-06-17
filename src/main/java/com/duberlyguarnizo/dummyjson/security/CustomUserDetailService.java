@@ -16,11 +16,11 @@ public class CustomUserDetailService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        var possibleEmployee = appUserRepository.findByUsernameIgnoreCase(username);
-        if (possibleEmployee.isEmpty()) {
+        var possibleAppUser = appUserRepository.findByUsernameIgnoreCase(username); //name must be unique!
+        if (possibleAppUser.isEmpty()) {
             throw new UsernameNotFoundException("The user with the name " + username + " could not be found!");
         } else {
-            return possibleEmployee.get();
+            return possibleAppUser.get();
         }
     }
 }

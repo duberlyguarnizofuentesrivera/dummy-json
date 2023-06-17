@@ -5,19 +5,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
     @Value("${hostname}")
     private String hostname;
@@ -89,25 +87,25 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
         return pd;
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ProblemDetail handleHttpMessageNotReadableException(Exception e, WebRequest request) {
-        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(400));
-        pd.setTitle(messageSource.getMessage("exception_json_processing", null, request.getLocale()));
-        pd.setDetail(messageSource.getMessage("exception_json_processing_detail", null, request.getLocale()));
-        pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
-        pd.setProperty(EXCEPTION_DETAIL_TEXT, e.getMessage());
-        return pd;
-    }
+//    @ExceptionHandler(HttpMessageNotReadableException.class)
+//    public ProblemDetail handleHttpMessageNotReadableException(Exception e, WebRequest request) {
+//        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(400));
+//        pd.setTitle(messageSource.getMessage("exception_json_processing", null, request.getLocale()));
+//        pd.setDetail(messageSource.getMessage("exception_json_processing_detail", null, request.getLocale()));
+//        pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
+//        pd.setProperty(EXCEPTION_DETAIL_TEXT, e.getMessage());
+//        return pd;
+//    }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleArgumentNotValidException(Exception e, WebRequest request) {
-        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(400));
-        pd.setTitle(messageSource.getMessage("exception_argument_not_valid", null, request.getLocale()));
-        pd.setDetail(messageSource.getMessage("exception_argument_not_valid_detail", null, request.getLocale()));
-        pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
-        pd.setProperty(EXCEPTION_DETAIL_TEXT, e.getMessage());
-        return pd;
-    }
+//    @ExceptionHandler(MethodArgumentNotValidException.class)
+//    public ProblemDetail handleArgumentNotValidException(Exception e, WebRequest request) {
+//        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(400));
+//        pd.setTitle(messageSource.getMessage("exception_argument_not_valid", null, request.getLocale()));
+//        pd.setDetail(messageSource.getMessage("exception_argument_not_valid_detail", null, request.getLocale()));
+//        pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
+//        pd.setProperty(EXCEPTION_DETAIL_TEXT, e.getMessage());
+//        return pd;
+//    }
 
     //5xx errors
     @ExceptionHandler(RepositoryException.class)

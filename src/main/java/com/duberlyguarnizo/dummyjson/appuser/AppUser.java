@@ -27,6 +27,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @NotBlank
     private String names;
     @Email
+    @Column(unique = true)
     private String email;
     @NotBlank
     private String idCard;
@@ -37,9 +38,11 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @Serial
     private static final long serialVersionUID = 987L;
     @NotBlank
+    @Column(unique = true)
     private String username;
     @NotBlank
     private String password;
+
     private boolean isLocked;
 
     @Override
@@ -64,7 +67,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return isLocked;
+        return !isLocked;
     }
 
     @Override

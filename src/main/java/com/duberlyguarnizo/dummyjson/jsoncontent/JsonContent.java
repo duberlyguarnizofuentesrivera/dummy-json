@@ -20,17 +20,17 @@ import java.util.Objects;
 public class JsonContent extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    Long id;
+    private Long id;
     @NotBlank
     String name;
 
     @Column(length = 2048)
     @Length(message = "Your JSON response is not the right size!", min = 3, max = 2048)
     @NotBlank
-    String json;
+    private String json;
 
-    @URL(protocol = "")
-    String path;
+    @URL
+    private String path;
 
     @Serial
     private static final long serialVersionUID = 990L;
