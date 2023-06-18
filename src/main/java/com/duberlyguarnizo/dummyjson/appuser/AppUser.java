@@ -10,6 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @NotBlank
     private String names;
     @Email
+    @Column(unique = true)
     private String email;
     @NotBlank
     private String idCard;
@@ -33,10 +35,15 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @Enumerated(EnumType.STRING)
     private AppUserRole role;
     private boolean isActive;
+    @Serial
+    private static final long serialVersionUID = 987L;
     @NotBlank
+    @Column(unique = true)
     private String username;
     @NotBlank
     private String password;
+
+    private boolean isLocked;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -60,7 +67,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !isLocked;
     }
 
     @Override

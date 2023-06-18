@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Public", description = "Public endpoints for visitors")
 public class JsonContentPublicAPIController {
     JsonContentService service;
+    private final ControllerUtils utils;
 
-    public JsonContentPublicAPIController(JsonContentService service) {
+    public JsonContentPublicAPIController(JsonContentService service, ControllerUtils utils) {
         this.service = service;
+        this.utils = utils;
     }
 
     @GetMapping("/{id}")
@@ -33,7 +35,7 @@ public class JsonContentPublicAPIController {
                                                                                 @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
         PageRequest pageRequest = PageRequest.of(page,
                 size,
-                Sort.by(ControllerUtils.processPageSort(sort)));
+                Sort.by(utils.processPageSort(sort)));
         var jsonDto = service.getByName(name, pageRequest);
         return ResponseEntity.ok(jsonDto);
     }

@@ -6,6 +6,7 @@ import lombok.Value;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.URL;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -21,4 +22,7 @@ public class JsonContentCreationDto implements Serializable {
     String json;
     @URL(protocol = "")
     String path;
+
+    @Serial
+    private static final long serialVersionUID = 992L;
 }

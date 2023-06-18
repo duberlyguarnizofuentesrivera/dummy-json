@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Value;
 import org.hibernate.validator.constraints.URL;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -17,4 +18,7 @@ public class JsonContentBasicDto implements Serializable {
     String name;
     @URL(protocol = "")
     String path;
+
+    @Serial
+    private static final long serialVersionUID = 991L;
 }

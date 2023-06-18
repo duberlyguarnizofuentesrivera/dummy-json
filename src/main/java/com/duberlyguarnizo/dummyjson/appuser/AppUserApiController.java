@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Managers", description = "Endpoints of CRUD methods  for managers")
 public class AppUserApiController {
     private final AppUserService appUserService;
+    private final ControllerUtils utils;
 
-    public AppUserApiController(AppUserService appUserService) {
+    public AppUserApiController(AppUserService appUserService, ControllerUtils utils) {
         this.appUserService = appUserService;
+        this.utils = utils;
     }
 
     public ResponseEntity<Page<AppUserBasicDto>> getManagers(@RequestParam(required = false, defaultValue = "0") int page,
@@ -30,7 +32,7 @@ public class AppUserApiController {
                                                              @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
         PageRequest pageRequest = PageRequest.of(page,
                 size,
-                Sort.by(ControllerUtils.processPageSort(sort)));
+                Sort.by(utils.processPageSort(sort)));
         var list = appUserService.getAllManagers(pageRequest);
         return new ResponseEntity<>(list, HttpStatus.OK);
     }

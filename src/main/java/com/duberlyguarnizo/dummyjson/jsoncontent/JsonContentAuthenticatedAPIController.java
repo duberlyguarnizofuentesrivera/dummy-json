@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Authenticated", description = "Endpoints for authenticated users, specifically for managing JSON content")
 public class JsonContentAuthenticatedAPIController {
     JsonContentService service;
+    private final ControllerUtils utils;
 
-    public JsonContentAuthenticatedAPIController(JsonContentService service) {
+    public JsonContentAuthenticatedAPIController(JsonContentService service, ControllerUtils utils) {
         this.service = service;
+        this.utils = utils;
     }
 
 
@@ -38,7 +40,7 @@ public class JsonContentAuthenticatedAPIController {
                                                                                    @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
         PageRequest pageRequest = PageRequest.of(page,
                 size,
-                Sort.by(ControllerUtils.processPageSort(sort)));
+                Sort.by(utils.processPageSort(sort)));
         var jsonDtoList = service.getAllByCurrentUser(pageRequest);
         return ResponseEntity.ok(jsonDtoList);
     }
@@ -47,19 +49,18 @@ public class JsonContentAuthenticatedAPIController {
     @PostMapping
     public ResponseEntity<Long> createJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
         Long id = service.create(jsonDto);
-        //TODO: JSON content name must be unique for the user
         return new ResponseEntity<>(id, HttpStatus.CREATED);
     }
 
     @PutMapping
     public ResponseEntity<Void> updateJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
-        service.update(jsonDto);
+        service.updateOwnJsonContent(jsonDto);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteJsonContentDetail(@PathVariable Long id) {
-        service.delete(id);
+        service.deleteOwnJsonContent(id);
         return ResponseEntity.noContent().build();
     }
 }

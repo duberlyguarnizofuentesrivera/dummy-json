@@ -42,4 +42,8 @@ public class AuthController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    //TODO: add logout endpoint
+    public ResponseEntity<?> doLogOut() {
+        return ResponseEntity.noContent().build();
+    }
 }
