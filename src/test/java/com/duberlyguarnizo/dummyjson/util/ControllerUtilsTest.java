@@ -1,13 +1,18 @@
 package com.duberlyguarnizo.dummyjson.util;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@SpringBootTest
 class ControllerUtilsTest {
+    @Autowired
+    ControllerUtils utils;
 
     @Test
     void getRequestLocale() {
@@ -24,7 +29,7 @@ class ControllerUtilsTest {
                 new Sort.Order(Sort.Direction.ASC, "path"));
 
         String[] sortOkArray = sortOkList.toArray(new String[0]);
-        var result = ControllerUtils.processPageSort(sortOkArray);
+        var result = utils.processPageSort(sortOkArray);
         var size = result.size();
         assertEquals(3, size);
         assertEquals(expectedResult, result);
@@ -40,7 +45,7 @@ class ControllerUtilsTest {
         String[] elem5 = new String[]{",name"};
         List<String[]> sortNotOkList = List.of(elem1, elem2, elem3, elem4, elem5);
         for (String[] element : sortNotOkList) {
-            var result = ControllerUtils.processPageSort(element);
+            var result = utils.processPageSort(element);
             assertEquals("id: ASC", result.get(0).toString());
         }
     }
@@ -63,7 +68,7 @@ class ControllerUtilsTest {
                 new Sort.Order(Sort.Direction.ASC, "id"));
 
         String[] sortOkArray = sortOkList.toArray(new String[0]);
-        var result = ControllerUtils.processPageSort(sortOkArray);
+        var result = utils.processPageSort(sortOkArray);
         var size = result.size();
         assertEquals(2, size); //list is cut where exception happened
         assertEquals(expectedResult, result); //expected is first element + default (id:ASC) where the cut happened

@@ -8,17 +8,15 @@ import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentBasicDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentCreationDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentDetailDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentMapper;
+import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
 import jakarta.validation.Valid;
 import lombok.extern.java.Log;
-import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-
-import static com.duberlyguarnizo.dummyjson.util.ControllerUtils.getRequestLocale;
 
 @Log
 @Service
@@ -27,15 +25,15 @@ public class JsonContentService {
     private final JsonContentRepository repository;
     private final JsonContentMapper mapper;
     private final CustomAuditorAware auditorAware;
-    private final MessageSource messages;
+    private final ControllerUtils utils;
 
 
-    public JsonContentService(JsonContentRepository repository, JsonContentMapper mapper, CustomAuditorAware auditorAware, MessageSource messages) {
+    public JsonContentService(JsonContentRepository repository, JsonContentMapper mapper, CustomAuditorAware auditorAware, ControllerUtils utils) {
         this.repository = repository;
         this.mapper = mapper;
         this.auditorAware = auditorAware;
-        this.messages = messages;
 
+        this.utils = utils;
     }
 
     //CRUD
@@ -43,7 +41,7 @@ public class JsonContentService {
         var json = repository.findById(id);
         if (json.isEmpty()) {
             Long[] array = {id};
-            throw new IdNotFoundException(messages.getMessage("exception_json_id_not_found_detail", array, getRequestLocale()));
+            throw new IdNotFoundException(utils.getMessage("exception_json_id_not_found_detail", array));
         }
         return mapper.toDetailDto(json.get());
     }
@@ -64,7 +62,7 @@ public class JsonContentService {
     public Page<JsonContentBasicDto> getAllByCurrentUser(Pageable page) {
         var currentAuditor = auditorAware.getCurrentAuditor();
         if (currentAuditor.isEmpty()) {
-            throw new AccessDeniedException(messages.getMessage("error_list_no_permissions", null, getRequestLocale()));
+            throw new AccessDeniedException(utils.getMessage("error_list_no_permissions"));
         } else {
             Long currentUserId = currentAuditor.get();
             return repository.findAllByCreatedBy(currentUserId, page)
@@ -82,17 +80,17 @@ public class JsonContentService {
     public Long create(@Valid JsonContentCreationDto jsonDto) {
         var currentAuditorId = auditorAware
                 .getCurrentAuditor()
-                .orElseThrow(() -> new AccessDeniedException("You do not have the permissions to validate this resource."));
+                .orElseThrow(() -> new AccessDeniedException(utils.getMessage("error_auditor_empty")));
         boolean isUnique = repository.findByNameIgnoreCaseAndCreatedBy(jsonDto.getName(), currentAuditorId, PageRequest.ofSize(0)).isEmpty();
         if (!isUnique) {
-            throw new RepositoryException("The name is not unique.");
+            throw new RepositoryException(utils.getMessage("exception_repository_save_error_unique_name_json"));
         }
         var json = mapper.toEntity(jsonDto);
         try {
             var savedJson = repository.save(json);
             return savedJson.getId();
         } catch (RuntimeException e) {
-            throw new RepositoryException("Error while trying to save the JSON content in database.");
+            throw new RepositoryException(utils.getMessage("exception_repository_save_error_invalid_json"));
         }
     }
 
@@ -101,11 +99,14 @@ public class JsonContentService {
         //We could use @PostAuthorize, but that would remove our ability to throw ProblemDetail exceptions
         var currentAuditorId = auditorAware
                 .getCurrentAuditor()
-                .orElseThrow(() -> new AccessDeniedException("You do not have the permissions to update this resource."));
+                .orElseThrow(() -> new AccessDeniedException(utils.getMessage("error_auditor_empty")));
 
-        var jsonContent = repository.findById(jsonDto.getId()).orElseThrow(() -> new IdNotFoundException("No JSON content found with id: " + jsonDto.getId() + " in the database"));
+        var jsonContent = repository
+                .findById(jsonDto.getId())
+                .orElseThrow(() -> new IdNotFoundException(
+                        utils.getMessage("exception_id_not_found_json_detail", new Long[]{jsonDto.getId()})));
         if (!jsonContent.getCreatedBy().equals(currentAuditorId)) {
-            throw new NotOwnedObjectException("You do not have the permissions to update this resource.");
+            throw new NotOwnedObjectException(utils.getMessage("error_update_not_the_owner"));
         }
 
         boolean isUnique = repository
@@ -113,7 +114,7 @@ public class JsonContentService {
                 .isEmpty();
         //check for original entity name, that name can be duplicated
         if (!isUnique && !jsonContent.getName().equals(jsonDto.getName())) {
-            throw new RepositoryException("The name is not unique.");
+            throw new RepositoryException(utils.getMessage("exception_repository_save_error_unique_name_json"));
         }
 
         var updatedJson = mapper.partialUpdate(jsonDto, jsonContent);
@@ -123,7 +124,10 @@ public class JsonContentService {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public void updateAnyJsonContent(@Valid JsonContentCreationDto jsonDto) {
         //We could use @PostAuthorize, but that would remove our ability to throw ProblemDetail exceptions
-        var jsonContent = repository.findById(jsonDto.getId()).orElseThrow(() -> new IdNotFoundException("No JSON content found with id: " + jsonDto.getId() + " in the database"));
+        var jsonContent = repository
+                .findById(jsonDto.getId())
+                .orElseThrow(() -> new IdNotFoundException
+                        (utils.getMessage("exception_id_not_found_json_detail", new Long[]{jsonDto.getId()})));
         var updatedJson = mapper.partialUpdate(jsonDto, jsonContent);
         repository.save(updatedJson);
     }
@@ -132,14 +136,14 @@ public class JsonContentService {
     public void deleteOwnJsonContent(Long id) {
         var currentAuditorId = auditorAware
                 .getCurrentAuditor()
-                .orElseThrow(() -> new AccessDeniedException("You do not have the permissions to delete this resource."));
+                .orElseThrow(() -> new AccessDeniedException(utils.getMessage("error_auditor_empty")));
         var jsonContent = repository
                 .findById(id)
-                .orElseThrow(() -> new IdNotFoundException("No JSON content found with id: " + id + " in the database"));
+                .orElseThrow(() -> new IdNotFoundException(utils.getMessage("exception_id_not_found_json_detail", new Long[]{id})));
         if (!jsonContent
                 .getCreatedBy()
                 .equals(currentAuditorId)) {
-            throw new NotOwnedObjectException("You do not have the permissions to delete this resource.");
+            throw new NotOwnedObjectException(utils.getMessage("error_delete_not_the_owner"));
         }
         repository.deleteById(id);
     }
@@ -148,7 +152,7 @@ public class JsonContentService {
     public void deleteAnyJsonContent(Long id) {
         var jsonContent = repository
                 .findById(id)
-                .orElseThrow(() -> new IdNotFoundException("No JSON content found with id: " + id + " in the database"));
+                .orElseThrow(() -> new IdNotFoundException(utils.getMessage("exception_id_not_found_json_detail", new Long[]{id})));
         repository.deleteById(jsonContent.getId());
     }
 

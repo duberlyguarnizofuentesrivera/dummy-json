@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Authenticated", description = "Endpoints for authenticated users, specifically for managing JSON content")
 public class JsonContentAuthenticatedAPIController {
     JsonContentService service;
+    private final ControllerUtils utils;
 
-    public JsonContentAuthenticatedAPIController(JsonContentService service) {
+    public JsonContentAuthenticatedAPIController(JsonContentService service, ControllerUtils utils) {
         this.service = service;
+        this.utils = utils;
     }
 
 
@@ -38,7 +40,7 @@ public class JsonContentAuthenticatedAPIController {
                                                                                    @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
         PageRequest pageRequest = PageRequest.of(page,
                 size,
-                Sort.by(ControllerUtils.processPageSort(sort)));
+                Sort.by(utils.processPageSort(sort)));
         var jsonDtoList = service.getAllByCurrentUser(pageRequest);
         return ResponseEntity.ok(jsonDtoList);
     }

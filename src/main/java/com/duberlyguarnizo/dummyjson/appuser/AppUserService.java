@@ -5,9 +5,10 @@ import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserDetailDto;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserMapper;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserRegistrationDto;
 import com.duberlyguarnizo.dummyjson.auditing.CustomAuditorAware;
+import com.duberlyguarnizo.dummyjson.exceptions.ForbiddenActionException;
 import com.duberlyguarnizo.dummyjson.exceptions.IdNotFoundException;
-import com.duberlyguarnizo.dummyjson.exceptions.NotOwnedObjectException;
 import com.duberlyguarnizo.dummyjson.exceptions.RepositoryException;
+import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -25,10 +26,17 @@ public class AppUserService {
     private final PasswordEncoder passwordEncoder;
     private final AppUserMapper mapper;
     private final CustomAuditorAware auditorAware;
+    private final ControllerUtils utils;
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public AppUserDetailDto getManagerById(Long id) {
-        return mapper.toDetailDto(appUserRepository.findById(id).orElseThrow(() -> new IdNotFoundException("No Manager found with id: " + id + " in the database")));
+        return mapper.toDetailDto(
+                appUserRepository
+                        .findById(id)
+                        .orElseThrow(() -> new IdNotFoundException(
+                                utils.getMessage(
+                                        "exception_id_not_found_manager_detail",
+                                        new Long[]{id}))));
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
@@ -46,15 +54,21 @@ public class AppUserService {
         try {
             return appUserRepository.save(convertedAppUser).getId();
         } catch (IllegalArgumentException e) {
-            throw new RepositoryException("Unable to create user, data is invalid.");
+            throw new RepositoryException(utils.getMessage("exception_repository_save_error_invalid_user"));
         } catch (OptimisticLockingFailureException e) {
-            throw new RepositoryException("Optimistic locking error, please try again");
+            throw new RepositoryException(utils.getMessage("exception_repository_save_error_optimistic_lock"));
         }
     }
 
     @PreAuthorize("hasAuthority('ADMIN')") //only admin user can edit users
     public void updateManager(AppUserRegistrationDto registrationDto) {
-        var manager = appUserRepository.findById(registrationDto.getId()).orElseThrow(() -> new IdNotFoundException("No manager found with id: " + registrationDto.getId() + " in the database."));
+        var manager = appUserRepository.findById(
+                        registrationDto.getId())
+                .orElseThrow(
+                        () -> new IdNotFoundException(
+                                utils.getMessage(
+                                        "exception_id_not_found_manager_detail",
+                                        new Long[]{registrationDto.getId()})));
         var updatedManager = mapper.partialUpdate(registrationDto, manager);
         //TODO: verify change in username (must be unique)
         appUserRepository.save(updatedManager);
@@ -64,12 +78,17 @@ public class AppUserService {
     public void deleteManager(Long id) {
         var currentAuditor = auditorAware.getCurrentAuditor();
         if (currentAuditor.isEmpty()) {
-            throw new AccessDeniedException("You do not have the permissions to delete this resource.");
+            throw new AccessDeniedException(utils.getMessage("error_auditor_empty"));
         } else {
-            var employee = appUserRepository.findById(id).orElseThrow(() -> new IdNotFoundException("No user found with id: " + id + " in the database."));
+            var appUser = appUserRepository
+                    .findById(id)
+                    .orElseThrow(() -> new IdNotFoundException(
+                            utils.getMessage(
+                                    "exception_id_not_found_user_detail",
+                                    new Long[]{id})));
             Long currentUserId = currentAuditor.get();
-            if (employee.getId().equals(currentUserId)) {
-                throw new NotOwnedObjectException("You cannot  delete your own user!");
+            if (appUser.getId().equals(currentUserId)) {
+                throw new ForbiddenActionException(utils.getMessage("error_delete_own_user"));
             }
             appUserRepository.deleteById(id);
         }
@@ -78,28 +97,38 @@ public class AppUserService {
     @PreAuthorize("hasAuthority('ADMIN')") //only admin user can deactivate other admins
     public void deactivateManager(Long id) {
         var currentAuditor = auditorAware.getCurrentAuditor();
-        var employee = appUserRepository.findById(id).orElseThrow(() -> new IdNotFoundException("No manager found with id: " + id + " in the database."));
+        var appUser = appUserRepository
+                .findById(id)
+                .orElseThrow(() -> new IdNotFoundException(
+                        utils.getMessage(
+                                "exception_id_not_found_user_detail",
+                                new Long[]{id})));
         if (currentAuditor.isPresent()) {
             Long currentUserId = currentAuditor.get();
-            if (employee.getId().equals(currentUserId)) {
-                throw new NotOwnedObjectException("You cannot  deactivate your own user!");
+            if (appUser.getId().equals(currentUserId)) {
+                throw new ForbiddenActionException(utils.getMessage("error_deactivate_own_user"));
             }
-            employee.setActive(false);
-            appUserRepository.save(employee);
+            appUser.setActive(false);
+            appUserRepository.save(appUser);
         } else {
-            throw new AccessDeniedException("You do not have the permissions to deactivate this resource.");
+            throw new AccessDeniedException(utils.getMessage("error_auditor_empty"));
         }
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public void deactivateUser(Long id) {
         var currentAuditor = auditorAware.getCurrentAuditor();
-        var employee = appUserRepository.findById(id).orElseThrow(() -> new IdNotFoundException("No user found with id: " + id + " in the database."));
-        if (employee.getRole() == AppUserRole.USER && currentAuditor.isPresent()) {
-            employee.setActive(false);
-            appUserRepository.save(employee);
+        var appUser = appUserRepository
+                .findById(id)
+                .orElseThrow(() -> new IdNotFoundException(
+                        utils.getMessage(
+                                "exception_id_not_found_user_detail",
+                                new Long[]{id})));
+        if (appUser.getRole() == AppUserRole.USER && currentAuditor.isPresent()) {
+            appUser.setActive(false);
+            appUserRepository.save(appUser);
         } else {
-            throw new AccessDeniedException("You do not have the permissions to deactivate this resource.");
+            throw new AccessDeniedException(utils.getMessage("error_deactivate_user"));
         }
     }
 

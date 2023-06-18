@@ -21,9 +21,11 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Management", description = "Endpoints for managers to administer JSON content created by users")
 public class JsonContentManagementAPIController {
     JsonContentService service;
+    private final ControllerUtils utils;
 
-    public JsonContentManagementAPIController(JsonContentService service) {
+    public JsonContentManagementAPIController(JsonContentService service, ControllerUtils utils) {
         this.service = service;
+        this.utils = utils;
     }
 
     @GetMapping("/{id}")
@@ -39,7 +41,7 @@ public class JsonContentManagementAPIController {
                                                                                      @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
         PageRequest pageRequest = PageRequest.of(page,
                 size,
-                Sort.by(ControllerUtils.processPageSort(sort)));
+                Sort.by(utils.processPageSort(sort)));
         var jsonDto = service.getAllByUserId(id, pageRequest);
         return ResponseEntity.ok(jsonDto);
     }
@@ -50,7 +52,7 @@ public class JsonContentManagementAPIController {
                                                                            @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
         PageRequest pageRequest = PageRequest.of(page,
                 size,
-                Sort.by(ControllerUtils.processPageSort(sort)));
+                Sort.by(utils.processPageSort(sort)));
         var jsonDtoList = service.getAllByAnyUser(pageRequest);
         return ResponseEntity.ok(jsonDtoList);
     }

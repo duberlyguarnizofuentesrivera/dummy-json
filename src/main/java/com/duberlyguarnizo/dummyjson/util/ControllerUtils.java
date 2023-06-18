@@ -1,18 +1,23 @@
 package com.duberlyguarnizo.dummyjson.util;
 
+import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContext;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+@Component
 public class ControllerUtils {
+    private final MessageSource messageSource;
 
-    private ControllerUtils() {
+    public ControllerUtils(MessageSource messageSource) {
         //Utility class, not meant to be instanced
+        this.messageSource = messageSource;
     }
 
     /**
@@ -22,7 +27,7 @@ public class ControllerUtils {
      *
      * @return Locale of the request, or default ("en").
      */
-    public static Locale getRequestLocale() {
+    private Locale getRequestLocale() {
         Locale locale = new Locale("en");
         LocaleContext localeContext = LocaleContextHolder.getLocaleContext();
         if (localeContext != null) {
@@ -34,7 +39,16 @@ public class ControllerUtils {
         return locale;
     }
 
-    public static List<Order> processPageSort(String[] sort) {
+    public String getMessage(String code) {
+        return messageSource.getMessage(code, null, this.getRequestLocale());
+    }
+
+    public String getMessage(String code, Object[] args) {
+        return messageSource.getMessage(code, args, this.getRequestLocale());
+    }
+
+
+    public List<Order> processPageSort(String[] sort) {
         List<Order> orders = new ArrayList<>();
         try {
             if (sort[0].contains(",")) {
@@ -54,7 +68,7 @@ public class ControllerUtils {
         return orders;
     }
 
-    private static Sort.Direction getSortDirection(String direction) {
+    private Sort.Direction getSortDirection(String direction) {
         if (direction.equalsIgnoreCase("asc") || direction.equalsIgnoreCase("ascending")) {
             return Sort.Direction.ASC;
         }
