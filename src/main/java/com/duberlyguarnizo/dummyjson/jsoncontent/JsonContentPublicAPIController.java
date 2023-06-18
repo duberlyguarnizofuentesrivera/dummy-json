@@ -3,18 +3,16 @@ package com.duberlyguarnizo.dummyjson.jsoncontent;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentBasicDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentDetailDto;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
+@RestController
 @RequestMapping("/api/v1/public/json")
+@Tag(name = "Public", description = "Public endpoints for visitors")
 public class JsonContentPublicAPIController {
     JsonContentService service;
 

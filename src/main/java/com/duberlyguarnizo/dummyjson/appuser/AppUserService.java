@@ -26,10 +26,12 @@ public class AppUserService {
     private final AppUserMapper mapper;
     private final CustomAuditorAware auditorAware;
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public AppUserDetailDto getManagerById(Long id) {
         return mapper.toDetailDto(appUserRepository.findById(id).orElseThrow(() -> new IdNotFoundException("No appuser found with id: " + id + " in the database")));
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public Page<AppUserBasicDto> getAllManagers(Pageable page) {
         return appUserRepository.findAll(page).map(mapper::toBasicDto);
     }
@@ -46,7 +48,6 @@ public class AppUserService {
         } catch (OptimisticLockingFailureException e) {
             throw new RepositoryException("Optimistic locking error, please try again");
         }
-
     }
 
     @PreAuthorize("hasAuthority('ADMIN')") //only admin user can edit users

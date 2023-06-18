@@ -2,6 +2,7 @@ package com.duberlyguarnizo.dummyjson.appuser;
 
 import com.duberlyguarnizo.dummyjson.auditing.AuditableEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -24,6 +25,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
     private Long id;
     @NotBlank
     private String names;
+    @Email
     private String email;
     @NotBlank
     private String idCard;
