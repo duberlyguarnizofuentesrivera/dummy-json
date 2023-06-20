@@ -1,6 +1,8 @@
 package com.duberlyguarnizo.dummyjson.security;
 
 import com.duberlyguarnizo.dummyjson.appuser.AppUser;
+import com.duberlyguarnizo.dummyjson.exceptions.JwtValidationException;
+import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +21,7 @@ import java.io.IOException;
 public class JwtRequestFilter extends OncePerRequestFilter {
     private final CustomUserDetailService userDetailService;
     private final JwtUtil jwtUtil;
+    private final JwtTokenRepository tokenRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -35,14 +38,23 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             AppUser appUser = (AppUser) userDetailService.loadUserByUsername(username);
             if (jwtUtil.validateToken(jwt, appUser)) {
-                UsernamePasswordAuthenticationToken upAuthenticationToken =
-                        new UsernamePasswordAuthenticationToken(
-                                appUser,
-                                null,
-                                appUser.getAuthorities()
-                        );
-                upAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(upAuthenticationToken);
+                var token = tokenRepository.findByToken(jwt).orElse(null); //jwt has been validated already
+
+                if (token != null) {
+                    if (!token.isExpired() && !token.isRevoked()) {
+                        UsernamePasswordAuthenticationToken upAuthenticationToken =
+                                new UsernamePasswordAuthenticationToken(
+                                        appUser,
+                                        null,
+                                        appUser.getAuthorities()
+                                );
+                        //TODO: validate token is not expired or revoked
+                        upAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(upAuthenticationToken);
+                    } else {
+                        throw new JwtValidationException();
+                    }
+                }
             }
         }
         filterChain.doFilter(request, response);

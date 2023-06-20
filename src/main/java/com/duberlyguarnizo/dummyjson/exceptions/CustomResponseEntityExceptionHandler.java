@@ -50,6 +50,15 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
         return pd;
     }
 
+    @ExceptionHandler(JwtValidationException.class)
+    public ProblemDetail handleJwtValidationException(Exception e, WebRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(403));
+        pd.setTitle("JWT Validation error");
+        pd.setDetail("This token his expired or has been revoked ");
+        pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
+        return pd;
+    }
+
     /**
      * Handles the exception thrown when an authenticated user tries to access a resource that is permitted.
      *

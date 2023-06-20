@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
         servers = {@Server(url = "http://localhost:8080", description = "Development API")}
 )
 @SecurityScheme(name = "Authorization Bearer",
-        description = "JWT token authentication for request",
+        description = "JWT jwt_token authentication for request",
         in = SecuritySchemeIn.HEADER,
         type = SecuritySchemeType.HTTP,
         scheme = "bearer",

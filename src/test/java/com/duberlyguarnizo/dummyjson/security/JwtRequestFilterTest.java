@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -19,16 +20,14 @@ import static org.mockito.Mockito.*;
 @ActiveProfiles("test")
 @SpringBootTest
 class JwtRequestFilterTest {
-    @Mock
-    CustomUserDetailService userDetailService;
 
     @Mock
     JwtUtil jwtUtil;
+    @Autowired
     private JwtRequestFilter filter;
 
     @Test
     void shouldNotProcessWithInvalidExistingAuthHeader() throws ServletException, IOException {
-        filter = new JwtRequestFilter(userDetailService, jwtUtil);
         String authorizationHeader = "invalid_auth_ header";
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/secured_endpoint");
@@ -42,8 +41,7 @@ class JwtRequestFilterTest {
 
     @Test
     void shouldNotProcessWithExistingValidAuthHeaderAndNonExistingUser() throws ServletException, IOException {
-        filter = new JwtRequestFilter(userDetailService, jwtUtil);
-        //example token with user "peterg" (for Peter Griffin, from Family Guy)
+        //example jwt_token with user "peterg" (for Peter Griffin, from Family Guy)
         String authorizationHeader = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwZXRlcmciLCJpYXQiOjE2ODQ3NzQxODEsImV4cCI6MTY4NDgxMDE4MX0.JZyoRiQ553ujDFlaUWL5HJPW8Ev2OZXNdT2XzW5lDXw";
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/secured_endpoint");
