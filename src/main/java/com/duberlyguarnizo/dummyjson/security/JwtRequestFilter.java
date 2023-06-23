@@ -1,7 +1,6 @@
 package com.duberlyguarnizo.dummyjson.security;
 
 import com.duberlyguarnizo.dummyjson.appuser.AppUser;
-import com.duberlyguarnizo.dummyjson.exceptions.JwtValidationException;
 import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -40,20 +39,22 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             if (jwtUtil.validateToken(jwt, appUser)) {
                 var token = tokenRepository.findByToken(jwt).orElse(null); //jwt has been validated already
 
-                if (token != null) {
-                    if (!token.isExpired() && !token.isRevoked()) {
-                        UsernamePasswordAuthenticationToken upAuthenticationToken =
-                                new UsernamePasswordAuthenticationToken(
-                                        appUser,
-                                        null,
-                                        appUser.getAuthorities()
-                                );
-                        //TODO: validate token is not expired or revoked
-                        upAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(upAuthenticationToken);
-                    } else {
-                        throw new JwtValidationException();
+                if (token != null && !request.getServletPath().contains("invalid-jwt")) {
+                    if (token.isExpired() || token.isRevoked()) {
+                        //No ProblemDetail is triggered at this point,
+                        // so redirect to a known endpoint that throws JwtValidationException.
+                        // Duberly Guarnizo, 2023.
+                        response.sendRedirect("/api/v1/auth/invalid-jwt");
                     }
+
+                    UsernamePasswordAuthenticationToken upAuthenticationToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    appUser,
+                                    null,
+                                    appUser.getAuthorities()
+                            );
+                    upAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(upAuthenticationToken);
                 }
             }
         }

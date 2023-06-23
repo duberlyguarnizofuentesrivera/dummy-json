@@ -53,8 +53,8 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     @ExceptionHandler(JwtValidationException.class)
     public ProblemDetail handleJwtValidationException(Exception e, WebRequest request) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(403));
-        pd.setTitle("JWT Validation error");
-        pd.setDetail("This token his expired or has been revoked ");
+        pd.setTitle(utils.getMessage("exception_jwt_revoked"));
+        pd.setDetail(utils.getMessage("exception_jwt_revoked_detail"));
         pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
         return pd;
     }

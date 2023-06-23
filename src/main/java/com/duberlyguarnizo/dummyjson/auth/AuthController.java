@@ -1,6 +1,7 @@
 package com.duberlyguarnizo.dummyjson.auth;
 
 import com.duberlyguarnizo.dummyjson.appuser.AppUser;
+import com.duberlyguarnizo.dummyjson.exceptions.JwtValidationException;
 import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
 import com.duberlyguarnizo.dummyjson.security.CustomUserDetailService;
 import com.duberlyguarnizo.dummyjson.security.JwtUtil;
@@ -51,5 +52,9 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/invalid-jwt")
+    public ResponseEntity<Void> returnInvalidJwtProblemDetail() {
+        throw new JwtValidationException();
+    }
 
 }

@@ -53,10 +53,11 @@ public class JwtTokenService {
             jwt = headerToken.substring(7);
             username = jwtUtil.extractUsername(jwt);
         }
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() != null) {
             // username and authentication exists, so logout:
             var token = getTokenByJwtString(jwt);
             token.setRevoked(true);
+            tokenRepository.save(token);
         } else {
             throw new ForbiddenActionException(utils.getMessage("error_auditor_empty"));
         }
