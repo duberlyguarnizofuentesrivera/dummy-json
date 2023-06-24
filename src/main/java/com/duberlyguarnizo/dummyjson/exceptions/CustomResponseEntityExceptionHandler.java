@@ -3,6 +3,7 @@ package com.duberlyguarnizo.dummyjson.exceptions;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
 import io.jsonwebtoken.JwtException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
@@ -11,6 +12,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -29,6 +31,7 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
 
     //4xx errors
     @ExceptionHandler(AuthenticationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ProblemDetail handleWrongAuthCredentials(Exception e, WebRequest request) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(401));
         if (e instanceof BadCredentialsException) {
@@ -50,6 +53,16 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
         return pd;
     }
 
+    @ExceptionHandler(JwtValidationException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ProblemDetail handleJwtValidationException(Exception e, WebRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(403));
+        pd.setTitle(utils.getMessage("exception_jwt_revoked"));
+        pd.setDetail(utils.getMessage("exception_jwt_revoked_detail"));
+        pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
+        return pd;
+    }
+
     /**
      * Handles the exception thrown when an authenticated user tries to access a resource that is permitted.
      *
@@ -59,8 +72,9 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
      * This <b>only works</b> with methods that have <b>@PreAuthorize</b> or similar annotations.
      */
     @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     public ProblemDetail handleAccessDeniedException(Exception e, WebRequest request) {
-        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(401));
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(403));
         pd.setTitle(utils.getMessage("exception_auth_permission_error"));
         pd.setDetail(utils.getMessage("exception_auth_permission_error_detail"));
         pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
@@ -69,8 +83,9 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     }
 
     @ExceptionHandler(NotOwnedObjectException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ProblemDetail handleNotTheOwnerException(Exception e, WebRequest request) {
-        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(403));
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(401));
         pd.setTitle(utils.getMessage("exception_not_the_owner"));
         pd.setDetail(utils.getMessage("exception_not_the_owner_detail"));
         pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
@@ -79,8 +94,9 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     }
 
     @ExceptionHandler(ForbiddenActionException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ProblemDetail handleForbiddenActionException(Exception e, WebRequest request) {
-        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(403));
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(401));
         pd.setTitle(utils.getMessage("exception_forbidden_action"));
         pd.setDetail(utils.getMessage("exception_forbidden_action_detail"));
         pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
@@ -90,6 +106,7 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
 
 
     @ExceptionHandler(IdNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public ProblemDetail handleIdNotFoundException(Exception e, WebRequest request) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(404));
         pd.setTitle(utils.getMessage("exception_id_not_found"));
@@ -120,6 +137,7 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
 
     //5xx errors
     @ExceptionHandler(RepositoryException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ProblemDetail handleRepositoryException(Exception e, WebRequest request) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(500));
         pd.setTitle(utils.getMessage("exception_server_error"));
@@ -129,6 +147,7 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
     }
 
     @ExceptionHandler(JwtException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ProblemDetail handleExpiredJwtException(Exception e, WebRequest request) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(500));
         pd.setTitle(utils.getMessage("exception_jwt_processing"));

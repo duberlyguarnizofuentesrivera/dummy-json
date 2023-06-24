@@ -14,7 +14,7 @@ import java.util.function.Function;
 
 @Service
 public class JwtUtil {
-    private static final int EXPIRATION_TIME = 1000 * 60 * 60 * 10;
+    private static final int EXPIRATION_TIME = 1000 * 60 * 60 * 10; //Token expires in 10 hours
     @Value("${jwt_key}")
     private String JWT_KEY;
 
@@ -62,6 +62,5 @@ public class JwtUtil {
         final String tokenUsername = extractUsername(token);
         return tokenUsername.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
-
 
 }
