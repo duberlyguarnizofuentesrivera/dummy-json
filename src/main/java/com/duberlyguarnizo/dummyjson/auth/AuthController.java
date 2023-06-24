@@ -5,6 +5,7 @@ import com.duberlyguarnizo.dummyjson.exceptions.JwtValidationException;
 import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
 import com.duberlyguarnizo.dummyjson.security.CustomUserDetailService;
 import com.duberlyguarnizo.dummyjson.security.JwtUtil;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.java.Log;
 import org.springframework.http.HttpStatus;
@@ -52,6 +53,19 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Revokes all authorization tokens for the user, effectively logging out sessions on all devices.
+     *
+     * @param headerToken The JWT included in the request, as an authorization header
+     * @return HTTP 202 NO CONTENT if successful, or ProblemDetail if an exception is thrown.
+     */
+    @GetMapping("/logout-all")
+    public ResponseEntity<Void> doLogOutAllSessions(@RequestHeader("authorization") String headerToken) {
+        tokenService.revokeAllUserTokens(headerToken);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Hidden //no need to show this as is a utility endpoint, not designed to be used by API clients
     @GetMapping("/invalid-jwt")
     public ResponseEntity<Void> returnInvalidJwtProblemDetail() {
         throw new JwtValidationException();

@@ -73,7 +73,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
-    }
+    } //TODO: expired and revoked tokens should be reflected here?
 
     @Override
     public boolean isEnabled() {

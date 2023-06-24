@@ -33,6 +33,13 @@ headers, and is validated. With an open session, user creates a new JsonContent 
 content. Any internet user can utilize that URL to get the same JsonContent (that endpoint is not secured). Abuse is
 avoided by IP filtering and limiting number of queries in a space of time.
 
+### Environment Variables
+
+You need to configure the following environment variables for the program to work properly:
+
+- JWT_KEY: Your key to encode the JSON Web Tokens. Keep this secret!
+- HOST_NAME: Your domain name, ie: [duberlyguarnizo.com](https://duberlyguarnizo.com/)
+
 ### User
 
 A user is either an admin, a supervisor, or a "client" (user who creates an account and uploads new JsonContent).It has

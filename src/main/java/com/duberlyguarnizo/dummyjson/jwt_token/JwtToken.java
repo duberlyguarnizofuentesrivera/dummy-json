@@ -6,6 +6,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Builder
 @Getter
@@ -15,9 +17,10 @@ import lombok.*;
 public class JwtToken {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    Long id;
-    Long userId;
-    String token;
-    boolean revoked;
-    boolean expired;
+    private Long id;
+    private Long userId;
+    private String token;
+    private boolean revoked;
+    private boolean expired;
+    private LocalDateTime createdDate;
 }

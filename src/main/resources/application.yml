@@ -23,6 +23,6 @@ logging:
     org.springframework.security: trace
 
 jwt_key: ${JWT_KEY}
-hostname: "duberlyguarnizo.com"
+hostname: ${HOST_NAME}
 
 
