@@ -45,6 +45,7 @@ public class AppUserApiController {
         this.utils = utils;
     }
 
+    @GetMapping()
     public ResponseEntity<Page<AppUserBasicDto>> getManagers(@RequestParam(required = false, defaultValue = "0") int page,
                                                              @RequestParam(required = false, defaultValue = "15") int size,
                                                              @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
