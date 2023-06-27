@@ -52,7 +52,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @NotNull
     @Enumerated(EnumType.STRING)
     private AppUserRole role;
-    private boolean isActive;
+    private boolean active;
     @Serial
     private static final long serialVersionUID = 987L;
     @NotBlank
@@ -61,7 +61,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @NotBlank
     private String password;
 
-    private boolean isLocked;
+    private boolean locked;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -85,7 +85,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return !isLocked;
+        return !locked;
     }
 
     @Override
@@ -95,6 +95,6 @@ public class AppUser extends AuditableEntity implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return isActive;
+        return active;
     }
 }

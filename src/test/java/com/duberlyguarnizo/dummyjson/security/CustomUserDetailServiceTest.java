@@ -71,7 +71,7 @@ class CustomUserDetailServiceTest {
                 .names("Jhon Doe")
                 .idCard("987654321")
                 .email("doe@mail.com")
-                .isActive(true)
+                .active(true)
                 .username("jhondoe")
                 .password(pwdEncoder.encode("doejhon"))
                 .role(AppUserRole.SUPERVISOR)

@@ -83,8 +83,8 @@ class JwtRequestFilterTest {
                 .password(pwEncoder.encode("pass"))
                 .idCard("12345678")
                 .role(AppUserRole.ADMIN)
-                .isActive(true)
-                .isLocked(false)
+                .active(true)
+                .locked(false)
                 .build()
         );
         String jwt = jwtUtil.generateToken(user);

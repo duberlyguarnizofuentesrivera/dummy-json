@@ -18,6 +18,7 @@
 
 package com.duberlyguarnizo.dummyjson.appuser;
 
+import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserDetailDto;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserRegistrationDto;
 import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
 import com.duberlyguarnizo.dummyjson.security.JwtUtil;
@@ -48,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AppUserApiControllerTest {
-    @Container
+    @Container // IntelliJ IDE false positive at PostgreSQLContainer<> about try-with-resources
     public static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(
             "postgres:latest")
             .withUsername("tc_user")
@@ -56,7 +57,7 @@ class AppUserApiControllerTest {
             .withDatabaseName("tc_db");
     static Faker faker = new Faker();
     static private String adminJwt;
-    private final List<Long> idList = new ArrayList<>(); //container for id's of originally created managers
+    private static final List<Long> idList = new ArrayList<>(); //container for id's of originally created managers
 
     @DynamicPropertySource
     public static void properties(DynamicPropertyRegistry registry) {
@@ -70,9 +71,9 @@ class AppUserApiControllerTest {
     public static void setUp(@Autowired JwtUtil jwtUtil,
                              @Autowired JwtTokenService tokenService,
                              @Autowired AppUserRepository userRepository,
-                             @Autowired AppUserApiController userApiController,
                              @Autowired WebApplicationContext context,
                              @Autowired PasswordEncoder pwEncoder) {
+
         AppUser user = userRepository.save(AppUser.builder()
                 .id(1L)
                 .names("admin user")
@@ -81,14 +82,32 @@ class AppUserApiControllerTest {
                 .password(pwEncoder.encode("pass"))
                 .idCard("12345678")
                 .role(AppUserRole.ADMIN)
-                .isActive(true)
-                .isLocked(false)
+                .active(true)
+                .locked(false)
                 .build()
         );
         String jwt = jwtUtil.generateToken(user);
         adminJwt = jwt;
         tokenService.saveToken(jwt, 1L);
         RestAssuredMockMvc.webAppContextSetup(context);
+
+    }
+
+    @Test
+    @DisplayName("Manager login with incorrect credentials return error")
+    @Order(0)
+    void testAdminLoginInvalid() {
+        String postLoginBody = "{ \"username\": \"notAdmin\", \"password\": \"invalidPass\"}";
+        given()
+                .header("Accept-Language", "es")
+                .body(postLoginBody)
+                .contentType(ContentType.JSON)
+                .log()
+                .everything()
+                .post("/api/v1/auth/authenticate")
+                .then()
+                .statusCode(401)
+                .body("status", equalTo(401));
     }
 
     @Test
@@ -126,6 +145,7 @@ class AppUserApiControllerTest {
                     .password(faker.internet().password())
                     .role(i % 2 == 0 ? AppUserRole.SUPERVISOR : AppUserRole.ADMIN)
                     .build();
+
             var response = given()
                     .log()
                     .ifValidationFails()
@@ -137,13 +157,86 @@ class AppUserApiControllerTest {
                     .post("/api/v1/management/managers")
                     .then()
                     .statusCode(201).extract().response();
-            assertDoesNotThrow(() -> idList.add(Long.parseLong(response.body().print())));
+            assertDoesNotThrow(() -> Long.parseLong(response.body().print()));
+            idList.add(Long.parseLong(response.body().print()));
         }
     }
 
     @Test
-    @DisplayName("Manager GET with valid id returns correct manager")
+    @DisplayName("Manager creation with invalid data returns error")
     @Order(3)
+    void createManagersWithInvalidData() {
+
+        var name = faker.name();
+        var tmpUser = AppUserRegistrationDto.builder()
+                .names("") //Required not empty String
+                //.idCard("") required idCard not provided
+                .email("invalid-email")
+                .username(name.username())
+                .password(faker.internet().password())
+                .role(AppUserRole.SUPERVISOR)
+                .build();
+
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .body(tmpUser)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/v1/management/managers")
+                .then()
+                .statusCode(400);
+
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .body("") //empty body
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/v1/management/managers")
+                .then()
+                .statusCode(400);
+
+    }
+
+
+    @Test
+    @DisplayName("Manager GET with invalid id returns error")
+    @Order(4)
+    void getManagerWithInvalidId() {
+        Long managerId = 987L; //Non-existing id
+        String invalidId = "stuff";
+
+        //return HTTP 404 Not Found on non-existing id
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .get("/api/v1/management/managers/{id}", managerId)
+                .then()
+                .statusCode(404)
+                .body("status", equalTo(404));
+
+        //Return HTTP 400 Bad Request on invalid id (like String instead of number)
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .get("/api/v1/management/managers/{id}", invalidId)
+                .then()
+                .statusCode(400)
+                .body("status", equalTo(400));
+    }
+
+    @Test
+    @DisplayName("Manager GET with valid id returns correct manager")
+    @Order(5)
     void getManagerById() {
         for (Long id : idList) {
             given()
@@ -154,13 +247,16 @@ class AppUserApiControllerTest {
                     .get("/api/v1/management/managers/{id}", id)
                     .then()
                     .statusCode(200)
-                    .body("id", equalTo(id))
+                    .body("id", equalTo(id.intValue()))
                     .body("username", not(emptyString()));
         }
     }
 
+    //TODO: get manager with non existing ID and NAN id
+
     @Test
-    @Order(4)
+    @DisplayName("Manager list returns all managers created plus original admin")
+    @Order(6)
     void getAllManagers() {
         given()
                 .log()
@@ -174,12 +270,131 @@ class AppUserApiControllerTest {
                 .body("content", hasSize(11))
                 .body("empty", equalTo(false));
     }
-//
-//    @Test
-//    void updateManager() {
-//    }
-//
-//    @Test
-//    void deleteManager() {
-//    }
+
+    @Test
+    @DisplayName("Manager update does update the entity in the DB")
+    @Order(7)
+    void updateManager() {
+        Long managerId = idList.get(5);
+        String newManagerNames = faker.name().fullName();
+        String newManagerEmail = faker.internet().emailAddress();
+        String newManagerIdCard = faker.numerify("########");
+        String newManagerUsername = faker.name().username();
+
+
+        //get name for manager
+        var manager = given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .get("/api/v1/management/managers/{id}", managerId)
+                .as(AppUserDetailDto.class);
+        assertEquals(managerId, manager.getId());
+
+        //change data for that manager
+        AppUserRegistrationDto registration = AppUserRegistrationDto.builder()
+                .id(manager.getId()) //PUT requires to provide ID field
+                .names(newManagerNames)
+                .idCard(newManagerIdCard)
+                .email(newManagerEmail)
+                .username(newManagerUsername)
+                .role(manager.getRole() == AppUserRole.ADMIN ? AppUserRole.SUPERVISOR : AppUserRole.ADMIN)
+                .build();
+
+        //Send PUT request and verify the changes... id must be the same
+        given()
+                .log()
+                .all()
+                .header("authorization", "Bearer " + adminJwt)
+                .body(registration)
+                .contentType(ContentType.JSON)
+                .and().header("Accept-Language", "es")
+                .put("/api/v1/management/managers")
+                .then()
+                .statusCode(204);
+
+        //now verify the changes:
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .get("/api/v1/management/managers/{id}", managerId)
+                .then()
+                .statusCode(200)
+                .body("id", equalTo(managerId.intValue())).and() //cast to int, as JsonPath returns int instead of long
+                .body("names", equalTo(newManagerNames)).and()
+                .body("idCard", equalTo(newManagerIdCard)).and()
+                .body("email", equalTo(newManagerEmail)).and()
+                .body("username", equalTo(newManagerUsername));
+    }
+
+    //TODO: update manager with invalid body
+
+    @Test
+    @DisplayName("Manager delete removes the entity from DB")
+    @Order(8)
+    void deleteManager() {
+        Long managerId = idList.get(5);
+        var manager = given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .get("/api/v1/management/managers/{id}", managerId)
+                .as(AppUserDetailDto.class);
+        assertEquals(managerId, manager.getId());
+
+        //delete the manager
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .delete("/api/v1/management/managers/{id}", managerId)
+                .then()
+                .statusCode(204);
+
+        //Verify manager no longer exists
+        given()
+                .log()
+                .all()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .get("/api/v1/management/managers/{id}", managerId)
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @DisplayName("Manager delete with invalid id returns error")
+    @Order(9)
+    void deleteNonExistingManager() {
+        Long managerId = 987L; //Non-existing id
+        String invalidId = "stuff";
+
+        //return HTTP 404 Not Found on non-existing id
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .delete("/api/v1/management/managers/{id}", managerId)
+                .then()
+                .statusCode(404)
+                .body("status", equalTo(404));
+
+        //Return HTTP 400 Bad Request on invalid id (like String instead of number)
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .delete("/api/v1/management/managers/{id}", invalidId)
+                .then()
+                .statusCode(400)
+                .body("status", equalTo(400));
+    }
+
 }

@@ -58,7 +58,7 @@ public class AppUserApiController {
 
     @GetMapping("/{id}")
     public ResponseEntity<AppUserDetailDto> getManager(@PathVariable Long id) {
-        var result = appUserService.getManagerById(id);
+        var result = appUserService.getManagerById(id); //TODO: manage NumberFormatException
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
