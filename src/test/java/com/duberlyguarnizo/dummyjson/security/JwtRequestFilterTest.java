@@ -19,22 +19,32 @@
 package com.duberlyguarnizo.dummyjson.security;
 
 import com.duberlyguarnizo.dummyjson.appuser.AppUser;
+import com.duberlyguarnizo.dummyjson.appuser.AppUserApiController;
+import com.duberlyguarnizo.dummyjson.appuser.AppUserRepository;
+import com.duberlyguarnizo.dummyjson.appuser.AppUserRole;
+import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.web.context.WebApplicationContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -42,6 +52,7 @@ import static org.mockito.Mockito.*;
 @SpringBootTest
 @Testcontainers
 class JwtRequestFilterTest {
+    private static String adminJwt;
     @Container
     public static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(
             "postgres:latest")
@@ -55,6 +66,31 @@ class JwtRequestFilterTest {
         registry.add("spring.datasource.username", container::getUsername);
         registry.add("spring.datasource.password", container::getPassword);
         registry.add("spring.datasource.driver-class-name", container::getDriverClassName);
+    }
+
+    @BeforeAll
+    public static void setUp(@Autowired JwtUtil jwtUtil,
+                             @Autowired JwtTokenService tokenService,
+                             @Autowired AppUserRepository userRepository,
+                             @Autowired AppUserApiController userApiController,
+                             @Autowired WebApplicationContext context,
+                             @Autowired PasswordEncoder pwEncoder) {
+        AppUser user = userRepository.save(AppUser.builder()
+                .id(1L)
+                .names("admin user")
+                .email("adminemail@admin.com")
+                .username("admin")
+                .password(pwEncoder.encode("pass"))
+                .idCard("12345678")
+                .role(AppUserRole.ADMIN)
+                .isActive(true)
+                .isLocked(false)
+                .build()
+        );
+        String jwt = jwtUtil.generateToken(user);
+        adminJwt = jwt;
+        tokenService.saveToken(jwt, 1L);
+        RestAssuredMockMvc.webAppContextSetup(context);
     }
 
 
@@ -78,15 +114,16 @@ class JwtRequestFilterTest {
 
     @Test
     void shouldNotProcessWithExistingValidAuthHeaderAndNonExistingUser() throws ServletException, IOException {
-        //example jwt_token with user "peterg" (for Peter Griffin, from Family Guy)
+        //example jwt_token with user "peterg" (for Peter Griffin, from Family Guy)... token should be invalid
         String authorizationHeader = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwZXRlcmciLCJpYXQiOjE2ODQ3NzQxODEsImV4cCI6MTY4NDgxMDE4MX0.JZyoRiQ553ujDFlaUWL5HJPW8Ev2OZXNdT2XzW5lDXw";
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/secured_endpoint");
         MockHttpServletResponse response = new MockHttpServletResponse();
         request.addHeader("authorization", authorizationHeader);
 
-        filter.doFilterInternal(request, response, mock(FilterChain.class));
-        verify(jwtUtil, times(1)).extractUsername(anyString());
+        assertThrows(ExpiredJwtException.class, () -> filter.doFilterInternal(request, response, mock(FilterChain.class)));
+        //since no processing takes place, JWT Util functions should not be called
+        verify(jwtUtil, times(0)).extractUsername(anyString());
         verify(jwtUtil, times(0)).validateToken(anyString(), any(AppUser.class));
     }
 }

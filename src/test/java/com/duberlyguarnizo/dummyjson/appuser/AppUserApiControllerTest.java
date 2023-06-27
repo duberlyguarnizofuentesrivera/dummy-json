@@ -111,10 +111,6 @@ class AppUserApiControllerTest {
         adminJwt = jwt;
     }
 
-    @Test
-    void getAllManagers() {
-    }
-
 
     @Test
     @DisplayName("Manager creation returns HTTP Created with valid data")
@@ -161,6 +157,22 @@ class AppUserApiControllerTest {
                     .body("id", equalTo(id))
                     .body("username", not(emptyString()));
         }
+    }
+
+    @Test
+    @Order(4)
+    void getAllManagers() {
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .get("/api/v1/management/managers")
+                .then()
+                .statusCode(200)
+                .body("numberOfElements", equalTo(11)) //remember original admin? That's why 10+1
+                .body("content", hasSize(11))
+                .body("empty", equalTo(false));
     }
 //
 //    @Test
