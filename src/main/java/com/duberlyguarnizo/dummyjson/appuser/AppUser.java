@@ -1,3 +1,21 @@
+/*
+ * dummy-json
+ * Copyright (c) 2023 Duberly Guarnizo Fuentes Rivera <duberlygfr@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.duberlyguarnizo.dummyjson.appuser;
 
 import com.duberlyguarnizo.dummyjson.auditing.AuditableEntity;
@@ -30,11 +48,12 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @Column(unique = true)
     private String email;
     @NotBlank
+    @Column(unique = true)
     private String idCard;
     @NotNull
     @Enumerated(EnumType.STRING)
     private AppUserRole role;
-    private boolean isActive;
+    private boolean active;
     @Serial
     private static final long serialVersionUID = 987L;
     @NotBlank
@@ -43,7 +62,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @NotBlank
     private String password;
 
-    private boolean isLocked;
+    private boolean locked;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -67,7 +86,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return !isLocked;
+        return !locked;
     }
 
     @Override
@@ -77,6 +96,6 @@ public class AppUser extends AuditableEntity implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return isActive;
+        return active;
     }
 }

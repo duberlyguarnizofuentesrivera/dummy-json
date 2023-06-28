@@ -18,8 +18,9 @@
 
 package com.duberlyguarnizo.dummyjson.exceptions;
 
-public class JwtValidationException extends RuntimeException {
-    public JwtValidationException() {
-        super();
+public class InvalidFieldValueException extends RuntimeException {
+
+    public InvalidFieldValueException(String message) {
+        super(message);
     }
 }
