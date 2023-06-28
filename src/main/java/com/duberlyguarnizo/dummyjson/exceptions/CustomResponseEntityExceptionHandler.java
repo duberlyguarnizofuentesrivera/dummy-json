@@ -143,15 +143,15 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
 //        return pd;
 //    }
 
-//    @ExceptionHandler(MethodArgumentNotValidException.class)
-//    public ProblemDetail handleArgumentNotValidException(Exception e, WebRequest request) {
-//        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(400));
-//        pd.setTitle(messageSource.getMessage("exception_argument_not_valid", null.getLocale()));
-//        pd.setDetail(messageSource.getMessage("exception_argument_not_valid_detail", null.getLocale()));
-//        pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
-//        pd.setProperty(EXCEPTION_DETAIL_TEXT, e.getMessage());
-//        return pd;
-//    }
+    @ExceptionHandler(InvalidFieldValueException.class)
+    public ProblemDetail handleFieldNotValidException(Exception e, WebRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(400));
+        pd.setTitle(utils.getMessage("error_invalid_body_field"));
+        pd.setDetail(utils.getMessage("error_invalid_body_field_detail"));
+        pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
+        pd.setProperty(EXCEPTION_DETAIL_TEXT, e.getMessage());
+        return pd;
+    }
 
     //5xx errors
     @ExceptionHandler(RepositoryException.class)

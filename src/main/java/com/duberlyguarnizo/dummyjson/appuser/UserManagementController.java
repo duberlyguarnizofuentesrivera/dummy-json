@@ -16,29 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.duberlyguarnizo.dummyjson.appuser.dto;
+package com.duberlyguarnizo.dummyjson.appuser;
 
-import com.duberlyguarnizo.dummyjson.appuser.AppUserRole;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
-import lombok.Data;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Data
-@Builder
-public class AppUserRegistrationDto {
-    private Long id;
-    @NotBlank
-    private String names;
-    @NotBlank
-    private String username;
-    private String password;
-    @Email
-    @NotBlank
-    private String email;
-    @NotBlank
-    private String idCard;
-    @NotNull
-    private AppUserRole role;
+@RestController
+@RequestMapping("/api/v1/management/users")
+@SecurityRequirement(name = "Authorization Bearer") //swagger UI
+@Tag(name = "Managers", description = "Endpoints of CRUD methods  for managers") //Swagger UI
+public class UserManagementController {
 }

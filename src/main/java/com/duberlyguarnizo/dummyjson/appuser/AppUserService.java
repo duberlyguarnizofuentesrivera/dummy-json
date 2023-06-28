@@ -25,7 +25,9 @@ import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserRegistrationDto;
 import com.duberlyguarnizo.dummyjson.auditing.CustomAuditorAware;
 import com.duberlyguarnizo.dummyjson.exceptions.ForbiddenActionException;
 import com.duberlyguarnizo.dummyjson.exceptions.IdNotFoundException;
+import com.duberlyguarnizo.dummyjson.exceptions.InvalidFieldValueException;
 import com.duberlyguarnizo.dummyjson.exceptions.RepositoryException;
+import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -45,16 +47,12 @@ public class AppUserService {
     private final AppUserMapper mapper;
     private final CustomAuditorAware auditorAware;
     private final ControllerUtils utils;
+    private final JwtTokenService jwtService;
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public AppUserDetailDto getManagerById(Long id) {
         return mapper.toDetailDto(
-                appUserRepository
-                        .findById(id)
-                        .orElseThrow(() -> new IdNotFoundException(
-                                utils.getMessage(
-                                        "exception_id_not_found_manager_detail",
-                                        new Long[]{id}))));
+                findAppUserById(id, true));
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
@@ -65,6 +63,10 @@ public class AppUserService {
     @PreAuthorize("hasAuthority('ADMIN')") //only admin user can create users
     public Long createManager(@Valid AppUserRegistrationDto registrationDto) throws RepositoryException {
         registrationDto.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
+        //Verify the role. A manager cannot have role USER
+        if (registrationDto.getRole() != AppUserRole.ADMIN && registrationDto.getRole() != AppUserRole.SUPERVISOR) {
+            throw new InvalidFieldValueException("The managers can only have ADMIN or SUPERVISOR role");//TODO: translate this
+        }
         AppUser convertedAppUser = mapper.toEntity(registrationDto);
         //TODO: verify that the username is unique
         convertedAppUser.setActive(true);
@@ -79,14 +81,11 @@ public class AppUserService {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')") //only admin user can edit users
-    public void updateManager(AppUserRegistrationDto registrationDto) {
-        var manager = appUserRepository.findById(
-                        registrationDto.getId())
-                .orElseThrow(
-                        () -> new IdNotFoundException(
-                                utils.getMessage(
-                                        "exception_id_not_found_manager_detail",
-                                        new Long[]{registrationDto.getId()})));
+    public void partialUpdateManager(AppUserRegistrationDto registrationDto) {
+        if (registrationDto.getRole() != AppUserRole.ADMIN && registrationDto.getRole() != AppUserRole.SUPERVISOR) {
+            throw new InvalidFieldValueException("The managers can only have ADMIN or SUPERVISOR role");//TODO: translate this
+        }
+        var manager = findAppUserById(registrationDto.getId(), true);
         var updatedManager = mapper.partialUpdate(registrationDto, manager);
         //TODO: verify change in username (must be unique)
         appUserRepository.save(updatedManager);
@@ -98,12 +97,7 @@ public class AppUserService {
         if (currentAuditor.isEmpty()) {
             throw new AccessDeniedException(utils.getMessage("error_auditor_empty"));
         } else {
-            var appUser = appUserRepository
-                    .findById(id)
-                    .orElseThrow(() -> new IdNotFoundException(
-                            utils.getMessage(
-                                    "exception_id_not_found_user_detail",
-                                    new Long[]{id})));
+            var appUser = findAppUserById(id, true);
             Long currentUserId = currentAuditor.get();
             if (appUser.getId().equals(currentUserId)) {
                 throw new ForbiddenActionException(utils.getMessage("error_delete_own_user"));
@@ -112,42 +106,98 @@ public class AppUserService {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
+    public void deleteUser(Long id) {
+        var currentAuditor = auditorAware.getCurrentAuditor();
+        if (currentAuditor.isEmpty()) {
+            throw new AccessDeniedException(utils.getMessage("error_auditor_empty"));
+        } else {
+            var appUser = findAppUserById(id, false);
+            Long currentUserId = currentAuditor.get();
+            if (appUser.getId().equals(currentUserId)) {
+                throw new ForbiddenActionException(utils.getMessage("error_delete_own_user"));
+            }
+            if (appUser.getRole() == AppUserRole.ADMIN || appUser.getRole() == AppUserRole.SUPERVISOR) {
+                throw new ForbiddenActionException(utils.getMessage("error_delete_user"));
+            }
+            appUserRepository.deleteById(id);
+        }
+    }
+
+    /**
+     * Deactivates a manager user by id. Only an ADMIN manager can deactivate other managers.
+     *
+     * @param id The id of the manager user to be deactivated.
+     * @throws IdNotFoundException      If no user is found with the provided id.
+     * @throws ForbiddenActionException If the current user tries to deactivate their own account or a non
+     *                                  manager user's account.
+     * @throws AccessDeniedException    If auditor is not present in the current context.
+     */
     @PreAuthorize("hasAuthority('ADMIN')") //only admin user can deactivate other admins
     public void deactivateManager(Long id) {
         var currentAuditor = auditorAware.getCurrentAuditor();
-        var appUser = appUserRepository
-                .findById(id)
-                .orElseThrow(() -> new IdNotFoundException(
-                        utils.getMessage(
-                                "exception_id_not_found_user_detail",
-                                new Long[]{id})));
+        var appUser = findAppUserById(id, true);
         if (currentAuditor.isPresent()) {
             Long currentUserId = currentAuditor.get();
             if (appUser.getId().equals(currentUserId)) {
                 throw new ForbiddenActionException(utils.getMessage("error_deactivate_own_user"));
             }
+            if (appUser.getRole() != AppUserRole.ADMIN && appUser.getRole() != AppUserRole.SUPERVISOR) {
+                //We use both options in case a fork adds new roles besides USER
+                throw new ForbiddenActionException(utils.getMessage("error_deactivate_manager"));
+            }
             appUser.setActive(false);
             appUserRepository.save(appUser);
+            // revoke JWT for the deactivated user
+            jwtService.revokeAllUserTokensByUserId(appUser.getId());
+
         } else {
             throw new AccessDeniedException(utils.getMessage("error_auditor_empty"));
         }
     }
 
+    /**
+     * Deactivates a user by id. Only an ADMIN or SUPERVISOR can deactivate non-manager users.
+     *
+     * @param id The id of the user to be deactivated.
+     * @throws IdNotFoundException   If no user is found with the provided id.
+     * @throws AccessDeniedException If the current user is not authorized to deactivate the user or if auditor is not present in the current context.
+     */
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public void deactivateUser(Long id) {
         var currentAuditor = auditorAware.getCurrentAuditor();
-        var appUser = appUserRepository
-                .findById(id)
-                .orElseThrow(() -> new IdNotFoundException(
-                        utils.getMessage(
-                                "exception_id_not_found_user_detail",
-                                new Long[]{id})));
-        if (appUser.getRole() == AppUserRole.USER && currentAuditor.isPresent()) {
+        var appUser = findAppUserById(id, false);
+        if (appUser.getRole() != AppUserRole.ADMIN
+                && appUser.getRole() != AppUserRole.SUPERVISOR
+                && currentAuditor.isPresent()) {
             appUser.setActive(false);
             appUserRepository.save(appUser);
+            jwtService.revokeAllUserTokensByUserId(appUser.getId());
         } else {
             throw new AccessDeniedException(utils.getMessage("error_deactivate_user"));
         }
+    }
+
+    /**
+     * Finds and returns an AppUser by its id. If not found, the exception is localized according to <i>isManager</i> flag.
+     *
+     * @param id        The id of the AppUser to be found.
+     * @param isManager A boolean value to indicate whether the AppUser to be found is a manager or not.
+     * @return An instance of AppUser with the provided id.
+     * @throws IdNotFoundException If no AppUser is found with the provided id.
+     */
+    private AppUser findAppUserById(Long id, boolean isManager) {
+        String i18n = "exception_id_not_found_user_detail";
+        if (isManager) {
+            i18n = "exception_id_not_found_manager_detail";
+        }
+        final String i18nString = i18n;
+        return appUserRepository
+                .findById(id)
+                .orElseThrow(() -> new IdNotFoundException(
+                        utils.getMessage(
+                                i18nString,
+                                new Long[]{id})));
     }
 
 }

@@ -48,6 +48,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @Column(unique = true)
     private String email;
     @NotBlank
+    @Column(unique = true)
     private String idCard;
     @NotNull
     @Enumerated(EnumType.STRING)

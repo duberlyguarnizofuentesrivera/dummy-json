@@ -20,10 +20,12 @@ package com.duberlyguarnizo.dummyjson.jwt_token;
 
 import com.duberlyguarnizo.dummyjson.exceptions.ForbiddenActionException;
 import com.duberlyguarnizo.dummyjson.exceptions.IdNotFoundException;
+import com.duberlyguarnizo.dummyjson.exceptions.RepositoryException;
 import com.duberlyguarnizo.dummyjson.security.JwtUtil;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -87,7 +89,7 @@ public class JwtTokenService {
         }
     }
 
-    public void revokeAllUserTokens(String headerToken) {
+    public void revokeAllCurrentUserTokens(String headerToken) {
         String username = null;
         String jwt = null;
 
@@ -107,6 +109,20 @@ public class JwtTokenService {
 
         } else {
             throw new ForbiddenActionException(utils.getMessage("error_auditor_empty"));
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
+    public void revokeAllUserTokensByUserId(Long userId) {
+        var tokenList = tokenRepository.findByUserId(userId);
+        if (tokenList.isEmpty()) {
+            throw new IdNotFoundException(utils.getMessage("exception_id_not_found_token_user", new Long[]{userId}));
+        } else {
+            try {
+                tokenList.forEach(t -> tokenRepository.deleteById(t.getId()));
+            } catch (IllegalArgumentException e) {
+                throw new RepositoryException(utils.getMessage("exception_repository_save_error_token_revoke"));
+            }
         }
     }
 

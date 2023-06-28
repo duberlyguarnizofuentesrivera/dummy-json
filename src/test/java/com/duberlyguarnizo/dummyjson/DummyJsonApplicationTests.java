@@ -18,6 +18,7 @@
 
 package com.duberlyguarnizo.dummyjson;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -51,6 +52,7 @@ class DummyJsonApplicationTests {
     }
 
     @Test
+    @DisplayName("TestContainer is running")
     void testTestContainerDBRunning() {
         assertTrue(container.isRunning());
     }

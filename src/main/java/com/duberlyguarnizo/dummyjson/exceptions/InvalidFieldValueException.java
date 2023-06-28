@@ -16,29 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.duberlyguarnizo.dummyjson.appuser.dto;
+package com.duberlyguarnizo.dummyjson.exceptions;
 
-import com.duberlyguarnizo.dummyjson.appuser.AppUserRole;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
-import lombok.Data;
+public class InvalidFieldValueException extends RuntimeException {
 
-@Data
-@Builder
-public class AppUserRegistrationDto {
-    private Long id;
-    @NotBlank
-    private String names;
-    @NotBlank
-    private String username;
-    private String password;
-    @Email
-    @NotBlank
-    private String email;
-    @NotBlank
-    private String idCard;
-    @NotNull
-    private AppUserRole role;
+    public InvalidFieldValueException(String message) {
+        super(message);
+    }
 }

@@ -19,9 +19,9 @@
 package com.duberlyguarnizo.dummyjson.security;
 
 import com.duberlyguarnizo.dummyjson.appuser.AppUser;
-import com.duberlyguarnizo.dummyjson.appuser.AppUserApiController;
 import com.duberlyguarnizo.dummyjson.appuser.AppUserRepository;
 import com.duberlyguarnizo.dummyjson.appuser.AppUserRole;
+import com.duberlyguarnizo.dummyjson.appuser.ManagerManagementController;
 import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
@@ -72,7 +72,7 @@ class JwtRequestFilterTest {
     public static void setUp(@Autowired JwtUtil jwtUtil,
                              @Autowired JwtTokenService tokenService,
                              @Autowired AppUserRepository userRepository,
-                             @Autowired AppUserApiController userApiController,
+                             @Autowired ManagerManagementController userApiController,
                              @Autowired WebApplicationContext context,
                              @Autowired PasswordEncoder pwEncoder) {
         AppUser user = userRepository.save(AppUser.builder()

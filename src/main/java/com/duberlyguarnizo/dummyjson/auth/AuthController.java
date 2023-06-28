@@ -79,7 +79,7 @@ public class AuthController {
      */
     @GetMapping("/logout-all")
     public ResponseEntity<Void> doLogOutAllSessions(@RequestHeader("authorization") String headerToken) {
-        tokenService.revokeAllUserTokens(headerToken);
+        tokenService.revokeAllCurrentUserTokens(headerToken);
         return ResponseEntity.noContent().build();
     }
 

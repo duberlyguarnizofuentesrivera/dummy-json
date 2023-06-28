@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 @AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class AppUserApiControllerTest {
+class ManagerManagementControllerTest {
     @Container // IntelliJ IDE false positive at PostgreSQLContainer<> about try-with-resources
     public static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(
             "postgres:latest")
@@ -203,13 +203,97 @@ class AppUserApiControllerTest {
 
     }
 
+    @Test
+    @DisplayName("Manager creation with USER role returns error")
+    @Order(4)
+    void createManagersWithValidDataButInvalidRole() {
+
+        var tmpUser = AppUserRegistrationDto.builder()
+                .names(faker.name().fullName())
+                .idCard(faker.numerify("########"))
+                .email(faker.internet().emailAddress())
+                .username(faker.name().username())
+                .password(faker.internet().password())
+                .role(AppUserRole.USER)
+                .build();
+
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .body(tmpUser)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/v1/management/managers")
+                .then()
+                .statusCode(400);
+
+    }
+
+    @Test
+    @DisplayName("Manager or user creation with existing username returns error")
+    @Order(5)
+    void createManagersOrUserWithValidDataButExistingUsernameOrIdCardOrEmail() {
+        Long existingUserId = idList.get(4);
+        var existingUser = given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .get("/api/v1/management/managers/{id}", existingUserId)
+                .as(AppUserDetailDto.class);
+
+        var tmpUser1 = AppUserRegistrationDto.builder()
+                .names(faker.name().fullName())
+                .idCard(faker.numerify("########"))
+                .email(faker.internet().emailAddress())
+                .username(existingUser.getUsername())
+                .password(faker.internet().password())
+                .role(AppUserRole.USER)
+                .build();
+        var tmpUser2 = AppUserRegistrationDto.builder()
+                .names(faker.name().fullName())
+                .idCard(existingUser.getIdCard())
+                .email(faker.internet().emailAddress())
+                .username(faker.name().username())
+                .password(faker.internet().password())
+                .role(AppUserRole.USER)
+                .build();
+        var tmpUser3 = AppUserRegistrationDto.builder()
+                .names(faker.name().fullName())
+                .idCard(faker.numerify("########"))
+                .email(existingUser.getEmail())
+                .username(faker.name().username())
+                .password(faker.internet().password())
+                .role(AppUserRole.USER)
+                .build();
+
+        List<AppUserRegistrationDto> dtoList = List.of(tmpUser1, tmpUser2, tmpUser3);
+        for (AppUserRegistrationDto dto : dtoList) {
+            given()
+                    .log()
+                    .ifValidationFails()
+                    .header("authorization", "Bearer " + adminJwt)
+                    .and().header("Accept-Language", "es")
+                    .body(dto)
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .post("/api/v1/management/managers")
+                    .then()
+                    .statusCode(400)
+                    .body("status", equalTo(400));
+        }
+
+    }
+
 
     @Test
     @DisplayName("Manager GET with invalid id returns error")
-    @Order(4)
+    @Order(6)
     void getManagerWithInvalidId() {
         Long managerId = 987L; //Non-existing id
-        String invalidId = "stuff";
+        String invalidId = "stuff"; //Non-valid id
 
         //return HTTP 404 Not Found on non-existing id
         given()
@@ -236,7 +320,7 @@ class AppUserApiControllerTest {
 
     @Test
     @DisplayName("Manager GET with valid id returns correct manager")
-    @Order(5)
+    @Order(7)
     void getManagerById() {
         for (Long id : idList) {
             given()
@@ -252,11 +336,10 @@ class AppUserApiControllerTest {
         }
     }
 
-    //TODO: get manager with non existing ID and NAN id
 
     @Test
     @DisplayName("Manager list returns all managers created plus original admin")
-    @Order(6)
+    @Order(8)
     void getAllManagers() {
         given()
                 .log()
@@ -273,7 +356,7 @@ class AppUserApiControllerTest {
 
     @Test
     @DisplayName("Manager update does update the entity in the DB")
-    @Order(7)
+    @Order(9)
     void updateManager() {
         Long managerId = idList.get(5);
         String newManagerNames = faker.name().fullName();
@@ -310,7 +393,7 @@ class AppUserApiControllerTest {
                 .body(registration)
                 .contentType(ContentType.JSON)
                 .and().header("Accept-Language", "es")
-                .put("/api/v1/management/managers")
+                .patch("/api/v1/management/managers")
                 .then()
                 .statusCode(204);
 
@@ -327,14 +410,120 @@ class AppUserApiControllerTest {
                 .body("names", equalTo(newManagerNames)).and()
                 .body("idCard", equalTo(newManagerIdCard)).and()
                 .body("email", equalTo(newManagerEmail)).and()
-                .body("username", equalTo(newManagerUsername));
+                .body("username", equalTo(newManagerUsername)).and()
+                .body("role", not(equalTo(manager.getRole().name()))).and()
+                .body("locked", equalTo(manager.isLocked())).and()
+                .body("active", equalTo(manager.isActive())).and()
+                .body("createdBy", equalTo(manager.getCreatedBy().intValue())).and()
+                .body("createdDate", equalTo(manager.getCreatedDate().toString()));
     }
 
-    //TODO: update manager with invalid body
+    @Test
+    @DisplayName("Manager update returns error with invalid JSON body")
+    @Order(10)
+    void updateManagerWithInvalidData() {
+        AppUserRegistrationDto registrationOne = AppUserRegistrationDto.builder()
+                .id(987L) //PUT requires to provide ID field,
+                .names("") //empty name
+                .idCard("") //empty idCard
+                .email("invalid-email$#")
+                .username("username")
+                .role(AppUserRole.ADMIN) //invalid role for a manager
+                .build();
+
+
+        given()
+                .log()
+                .all()
+                .header("authorization", "Bearer " + adminJwt)
+                .body(registrationOne)
+                .contentType(ContentType.JSON)
+                .and().header("Accept-Language", "es")
+                .patch("/api/v1/management/managers")
+                .then()
+                .statusCode(400)
+                .body("status", equalTo(400));
+    }
+
+    @Test
+    @DisplayName("Manager update returns error if tried to change role to USER")
+    @Order(11)
+    void updateManagerWithValidDataButInvalidRole() {
+        AppUserRegistrationDto registrationOne = AppUserRegistrationDto.builder()
+                .id(idList.get(5)) //PATCH requires to provide ID field in this case
+                .names(faker.name().fullName())
+                .username(faker.name().username())
+                .idCard(faker.numerify("########"))
+                .role(AppUserRole.USER) //invalid role for a manager
+                .build();
+
+
+        given()
+                .log()
+                .all()
+                .header("authorization", "Bearer " + adminJwt)
+                .body(registrationOne)
+                .contentType(ContentType.JSON)
+                .and().header("Accept-Language", "es")
+                .patch("/api/v1/management/managers")
+                .then()
+                .statusCode(400)
+                .body("status", equalTo(400));
+    }
+
+    @Test
+    @DisplayName("AppUser update with existing username, idCard or Email returns error")
+    @Order(12)
+    void updateManagerWithValidDataButExistingUsernameOrIdCardOrEmail() {
+        Long firstManagerId = idList.get(7);
+        Long secondManagerId = idList.get(6);
+        var existingManager = given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .get("/api/v1/management/managers/{id}", firstManagerId)
+                .as(AppUserDetailDto.class);
+        assertEquals(firstManagerId, existingManager.getId());
+
+        //Create a registrationDto with the username, idCard and email of the first manager and the id of the second manager
+        AppUserRegistrationDto dto1 = AppUserRegistrationDto.builder()
+                .id(secondManagerId)
+                .names(faker.name().fullName())
+                .username(existingManager.getUsername())
+                .idCard(faker.numerify("########"))
+                .build();
+        AppUserRegistrationDto dto2 = AppUserRegistrationDto.builder()
+                .id(secondManagerId)
+                .names(faker.name().fullName())
+                .idCard(existingManager.getIdCard())
+                .build();
+        AppUserRegistrationDto dto3 = AppUserRegistrationDto.builder()
+                .id(secondManagerId)
+                .names(faker.name().fullName())
+                .email(existingManager.getEmail())
+                .build();
+        List<AppUserRegistrationDto> dtoList = List.of(dto1, dto2, dto3);
+
+        for (AppUserRegistrationDto dto : dtoList) {
+            given()
+                    .log()
+                    .ifValidationFails()
+                    .header("authorization", "Bearer " + adminJwt)
+                    .body(dto)
+                    .contentType(ContentType.JSON)
+                    .and().header("Accept-Language", "es")
+                    .patch("/api/v1/management/managers")
+                    .then()
+                    .statusCode(400)
+                    .body("status", equalTo(400));
+        }
+    }
+
 
     @Test
     @DisplayName("Manager delete removes the entity from DB")
-    @Order(8)
+    @Order(13)
     void deleteManager() {
         Long managerId = idList.get(5);
         var manager = given()
@@ -352,7 +541,7 @@ class AppUserApiControllerTest {
                 .ifValidationFails()
                 .header("authorization", "Bearer " + adminJwt)
                 .and().header("Accept-Language", "es")
-                .delete("/api/v1/management/managers/{id}", managerId)
+                .delete("/api/v1/management/managers/manager/{id}", managerId)
                 .then()
                 .statusCode(204);
 
@@ -369,7 +558,7 @@ class AppUserApiControllerTest {
 
     @Test
     @DisplayName("Manager delete with invalid id returns error")
-    @Order(9)
+    @Order(14)
     void deleteNonExistingManager() {
         Long managerId = 987L; //Non-existing id
         String invalidId = "stuff";
@@ -380,7 +569,7 @@ class AppUserApiControllerTest {
                 .ifValidationFails()
                 .header("authorization", "Bearer " + adminJwt)
                 .and().header("Accept-Language", "es")
-                .delete("/api/v1/management/managers/{id}", managerId)
+                .delete("/api/v1/management/managers/manager/{id}", managerId)
                 .then()
                 .statusCode(404)
                 .body("status", equalTo(404));
@@ -391,7 +580,7 @@ class AppUserApiControllerTest {
                 .ifValidationFails()
                 .header("authorization", "Bearer " + adminJwt)
                 .and().header("Accept-Language", "es")
-                .delete("/api/v1/management/managers/{id}", invalidId)
+                .delete("/api/v1/management/managers/manager/{id}", invalidId)
                 .then()
                 .statusCode(400)
                 .body("status", equalTo(400));
