@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.duberlyguarnizo.dummyjson.appuser;
+package com.duberlyguarnizo.dummyjson.appuser.controller;
 
+import com.duberlyguarnizo.dummyjson.appuser.AppUserService;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserBasicDto;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserDetailDto;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserRegistrationDto;
@@ -55,14 +56,14 @@ public class ManagerManagementController {
      *
      * @param page the page number (0-indexed) of the page to retrieve. Defaults to 0.
      * @param size the maximum number of items to return on the requested page. Defaults to 15.
-     * @param sort an array of sort directives in the format "property, direction". Defaults to sorting by ID in descending order.
+     * @param sort an array of sort directives in the format "property, direction". Defaults to sorting by ID in descending order. Sort is validated by utility service.
      * @return a ResponseEntity with a Page object containing basic details of the managers on the requested page, sorted as specified.
      * The response status will be 200 (OK) on success.
      */
     @GetMapping()
-    public ResponseEntity<Page<AppUserBasicDto>> getManagers(@RequestParam(required = false, defaultValue = "0") int page,
-                                                             @RequestParam(required = false, defaultValue = "15") int size,
-                                                             @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
+    public ResponseEntity<Page<AppUserBasicDto>> getAllManagers(@RequestParam(required = false, defaultValue = "0") int page,
+                                                                @RequestParam(required = false, defaultValue = "15") int size,
+                                                                @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
         PageRequest pageRequest = PageRequest.of(page,
                 size,
                 Sort.by(utils.processPageSort(sort))); //sort is validated in utility method
@@ -80,7 +81,7 @@ public class ManagerManagementController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<AppUserDetailDto> getManager(@PathVariable Long id) {
-        var result = appUserService.getManagerById(id); //TODO: manage NumberFormatException
+        var result = appUserService.getManagerById(id);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
@@ -114,30 +115,13 @@ public class ManagerManagementController {
      * @param id the id of the manager to be deleted.
      * @return a ResponseEntity with no content (204 No Content) on successful deletion.
      */
-    @DeleteMapping("/manager/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteManager(@PathVariable Long id) {
         appUserService.deleteManager(id);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/user/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        appUserService.deleteUser(id);
-        return ResponseEntity.noContent().build();
-    }
-    //TODO: add endpoint to delete normal users
 
-    /**
-     * Deactivates a user with the given id. ADMIN or SUPERVISOR can deactivate a user.
-     *
-     * @param id the id of the user to deactivate.
-     * @return a ResponseEntity with a void body. The response status will be 200 (Ok) on success.
-     */
-    @PatchMapping("/deactivate-user/{id}")
-    public ResponseEntity<Void> deactivateUser(@PathVariable Long id) {
-        appUserService.deactivateUser(id);
-        return ResponseEntity.ok().build();
-    }
 
     /**
      * Deactivates a manager with the given id. Only role ADMIN can deactivate a manager.
@@ -145,7 +129,7 @@ public class ManagerManagementController {
      * @param id the id of the manager to deactivate.
      * @return a ResponseEntity with a void body. The response status will be 200 (Ok) on success.
      */
-    @PatchMapping("/deactivate-manager/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<Void> deactivateManager(@PathVariable Long id) {
         appUserService.deactivateManager(id);
         return ResponseEntity.ok().build();

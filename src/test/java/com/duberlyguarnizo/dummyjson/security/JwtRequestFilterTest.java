@@ -21,7 +21,7 @@ package com.duberlyguarnizo.dummyjson.security;
 import com.duberlyguarnizo.dummyjson.appuser.AppUser;
 import com.duberlyguarnizo.dummyjson.appuser.AppUserRepository;
 import com.duberlyguarnizo.dummyjson.appuser.AppUserRole;
-import com.duberlyguarnizo.dummyjson.appuser.ManagerManagementController;
+import com.duberlyguarnizo.dummyjson.appuser.controller.ManagerManagementController;
 import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;

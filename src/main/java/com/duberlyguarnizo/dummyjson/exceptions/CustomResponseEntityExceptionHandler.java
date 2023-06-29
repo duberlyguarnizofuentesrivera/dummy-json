@@ -21,6 +21,7 @@ package com.duberlyguarnizo.dummyjson.exceptions;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
 import io.jsonwebtoken.JwtException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
@@ -133,15 +134,15 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
         return pd;
     }
 
-//    @ExceptionHandler(HttpMessageNotReadableException.class)
-//    public ProblemDetail handleHttpMessageNotReadableException(Exception e, WebRequest request) {
-//        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(400));
-//        pd.setTitle(messageSource.getMessage("exception_json_processing", null.getLocale()));
-//        pd.setDetail(messageSource.getMessage("exception_json_processing_detail", null.getLocale()));
-//        pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
-//        pd.setProperty(EXCEPTION_DETAIL_TEXT, e.getMessage());
-//        return pd;
-//    }
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDuplicatedValueException(Exception e, WebRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatusCode.valueOf(400)); //TODO: change to proper number
+        pd.setTitle("required field exists");
+        pd.setDetail("the field name or email or idCard already exists ");
+        pd.setProperty(HOSTNAME_KEY_TEXT, hostname);
+        pd.setProperty(EXCEPTION_DETAIL_TEXT, e.getMessage());
+        return pd;
+    }
 
     @ExceptionHandler(InvalidFieldValueException.class)
     public ProblemDetail handleFieldNotValidException(Exception e, WebRequest request) {

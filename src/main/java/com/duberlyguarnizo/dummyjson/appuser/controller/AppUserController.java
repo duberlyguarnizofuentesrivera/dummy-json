@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.duberlyguarnizo.dummyjson.appuser;
+package com.duberlyguarnizo.dummyjson.appuser.controller;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,8 +24,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/management/users")
+@RequestMapping("/api/v1/authenticated")
 @SecurityRequirement(name = "Authorization Bearer") //swagger UI
 @Tag(name = "Managers", description = "Endpoints of CRUD methods  for managers") //Swagger UI
-public class UserManagementController {
+public class AppUserController {
+
 }

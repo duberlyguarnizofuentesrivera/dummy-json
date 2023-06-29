@@ -39,6 +39,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AppUserService {
@@ -56,8 +58,21 @@ public class AppUserService {
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
+    public AppUserDetailDto getAppUserById(Long id) {
+        return mapper.toDetailDto(
+                findAppUserById(id, false));
+    }
+
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public Page<AppUserBasicDto> getAllManagers(Pageable page) {
-        return appUserRepository.findAll(page).map(mapper::toBasicDto);
+        List<AppUserRole> managementRoles = List.of(AppUserRole.ADMIN, AppUserRole.SUPERVISOR);
+        return appUserRepository.findByRoleIn(managementRoles, page).map(mapper::toBasicDto);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
+    public Page<AppUserBasicDto> getAllUsers(Pageable page) {
+        return appUserRepository.findByRole(AppUserRole.USER, page).map(mapper::toBasicDto);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')") //only admin user can create users
@@ -67,17 +82,27 @@ public class AppUserService {
         if (registrationDto.getRole() != AppUserRole.ADMIN && registrationDto.getRole() != AppUserRole.SUPERVISOR) {
             throw new InvalidFieldValueException("The managers can only have ADMIN or SUPERVISOR role");//TODO: translate this
         }
-        AppUser convertedAppUser = mapper.toEntity(registrationDto);
-        //TODO: verify that the username is unique
-        convertedAppUser.setActive(true);
-        convertedAppUser.setLocked(false);
-        try {
-            return appUserRepository.save(convertedAppUser).getId();
-        } catch (IllegalArgumentException e) {
-            throw new RepositoryException(utils.getMessage("exception_repository_save_error_invalid_user"));
-        } catch (OptimisticLockingFailureException e) {
-            throw new RepositoryException(utils.getMessage("exception_repository_save_error_optimistic_lock"));
+
+        return saveAppUserAndGetId(registrationDto);
+    }
+
+
+    /**
+     * Creates a new user FOR USER MANAGEMENT with the provided registration data.
+     *
+     * @param registrationDto The registration data of the user.
+     * @return The id of the created user.
+     * @throws RepositoryException        If an error occurs while saving the user in the repository.
+     * @throws InvalidFieldValueException If the user's role is ADMIN or SUPERVISOR.
+     */
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")// Admin and Supervisor can create users via management.
+    public Long createUser(@Valid AppUserRegistrationDto registrationDto) throws RepositoryException {
+        registrationDto.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
+        //Verify the role. A user cannot have ADMIN or SUPERVISOR role.
+        if (registrationDto.getRole() == AppUserRole.ADMIN || registrationDto.getRole() == AppUserRole.SUPERVISOR) {
+            throw new InvalidFieldValueException("The users cannot have roles ADMIN or SUPERVISOR");//TODO: translate this
         }
+        return saveAppUserAndGetId(registrationDto);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')") //only admin user can edit users
@@ -87,7 +112,16 @@ public class AppUserService {
         }
         var manager = findAppUserById(registrationDto.getId(), true);
         var updatedManager = mapper.partialUpdate(registrationDto, manager);
-        //TODO: verify change in username (must be unique)
+        appUserRepository.save(updatedManager);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')") //only admin user can edit users
+    public void partialUpdateUser(AppUserRegistrationDto registrationDto) {
+        if (registrationDto.getRole() == AppUserRole.ADMIN || registrationDto.getRole() == AppUserRole.SUPERVISOR) {
+            throw new InvalidFieldValueException("The users cannot have ADMIN or SUPERVISOR role");//TODO: translate this
+        }
+        var user = findAppUserById(registrationDto.getId(), false);
+        var updatedManager = mapper.partialUpdate(registrationDto, user);
         appUserRepository.save(updatedManager);
     }
 
@@ -198,6 +232,19 @@ public class AppUserService {
                         utils.getMessage(
                                 i18nString,
                                 new Long[]{id})));
+    }
+
+    private Long saveAppUserAndGetId(AppUserRegistrationDto registrationDto) {
+        AppUser convertedManager = mapper.toEntity(registrationDto);
+        convertedManager.setActive(true);
+        convertedManager.setLocked(false);
+        try {
+            return appUserRepository.save(convertedManager).getId();
+        } catch (IllegalArgumentException e) {
+            throw new RepositoryException(utils.getMessage("exception_repository_save_error_invalid_user"));
+        } catch (OptimisticLockingFailureException e) {
+            throw new RepositoryException(utils.getMessage("exception_repository_save_error_optimistic_lock"));
+        }
     }
 
 }
