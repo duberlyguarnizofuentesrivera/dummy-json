@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.duberlyguarnizo.dummyjson.jsoncontent;
+package com.duberlyguarnizo.dummyjson.jsoncontent.controller;
 
+import com.duberlyguarnizo.dummyjson.jsoncontent.JsonContentService;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentBasicDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentCreationDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentDetailDto;
@@ -36,11 +37,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/authenticated/json")
 @SecurityRequirement(name = "Authorization Bearer")
 @Tag(name = "Authenticated", description = "Endpoints for authenticated users, specifically for managing JSON content")
-public class JsonContentAuthenticatedAPIController {
+public class JCAuthenticatedController {
     JsonContentService service;
     private final ControllerUtils utils;
 
-    public JsonContentAuthenticatedAPIController(JsonContentService service, ControllerUtils utils) {
+    public JCAuthenticatedController(JsonContentService service, ControllerUtils utils) {
         this.service = service;
         this.utils = utils;
     }

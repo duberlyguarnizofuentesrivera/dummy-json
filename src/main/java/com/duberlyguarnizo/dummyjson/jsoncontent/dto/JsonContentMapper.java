@@ -21,15 +21,32 @@ package com.duberlyguarnizo.dummyjson.jsoncontent.dto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.JsonContent;
 import org.mapstruct.*;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING)
 public interface JsonContentMapper {
+    //@Mapping(target = "createdDate", source = "jsonContentCreationDto.createdDate", qualifiedByName = "toLocalDateTime")
     JsonContent toEntity(JsonContentCreationDto jsonContentCreationDto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     JsonContent partialUpdate(JsonContentCreationDto jsonContentCreationDto, @MappingTarget JsonContent jsonContent);
 
+    @Mapping(target = "createdDate", source = "jsonContent.createdDate", qualifiedByName = "toZonedDateTime")
+    @Mapping(target = "modifiedDate", source = "jsonContent.modifiedDate", qualifiedByName = "toZonedDateTime")
     JsonContentDetailDto toDetailDto(JsonContent jsonContent);
 
     JsonContentBasicDto toBasicDto(JsonContent jsonContent);
+
+    @Named("toZonedDateTime")
+    default ZonedDateTime toZonedDateTime(LocalDateTime localDateTime) {
+        return ZonedDateTime.of(localDateTime, ZoneId.of("UTC"));
+    }
+
+    @Named("toLocalDateTime")
+    default LocalDateTime toLocalDateTime(ZonedDateTime zonedDateTime) {
+        return zonedDateTime.toLocalDateTime();
+    }
 
 }

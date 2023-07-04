@@ -24,7 +24,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.hibernate.Hibernate;
 import org.hibernate.validator.constraints.Length;
-import org.hibernate.validator.constraints.URL;
 
 import java.io.Serial;
 import java.util.Objects;
@@ -40,14 +39,13 @@ public class JsonContent extends AuditableEntity {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     @NotBlank
-    String name;
+    private String name;
 
     @Column(length = 2048)
     @Length(message = "Your JSON response is not the right size!", min = 3, max = 2048)
     @NotBlank
     private String json;
 
-    @URL
     private String path;
 
     @Serial

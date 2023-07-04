@@ -22,11 +22,10 @@ import com.duberlyguarnizo.dummyjson.jsoncontent.JsonContent;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Value;
 import org.hibernate.validator.constraints.Length;
-import org.hibernate.validator.constraints.URL;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 /**
  * DTO for {@link JsonContent}
@@ -35,15 +34,15 @@ import java.time.LocalDateTime;
 public class JsonContentDetailDto implements Serializable {
     Long createdBy;
     Long modifiedBy;
-    LocalDateTime createdDate;
-    LocalDateTime modifiedDate;
+    ZonedDateTime createdDate;
+    ZonedDateTime modifiedDate;
     Long id;
     @NotBlank
     String name;
     @NotBlank
-    @Length(message = "Your JSON response is not the right size!", min = 3, max = 2048)
+    @Length(message = "Your JSON response is not the right size!", min = 3, max = 2048) //TODO: evaluate increase
     String json;
-    @URL(protocol = "")
+
     String path;
 
     @Serial

@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.duberlyguarnizo.dummyjson.jsoncontent;
+package com.duberlyguarnizo.dummyjson.jsoncontent.controller;
 
+import com.duberlyguarnizo.dummyjson.jsoncontent.JsonContentService;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentBasicDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentCreationDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentDetailDto;
@@ -37,11 +38,11 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "Authorization Bearer")
 @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
 @Tag(name = "Management", description = "Endpoints for managers to administer JSON content created by users")
-public class JsonContentManagementAPIController {
+public class JCManagementController {
     JsonContentService service;
     private final ControllerUtils utils;
 
-    public JsonContentManagementAPIController(JsonContentService service, ControllerUtils utils) {
+    public JCManagementController(JsonContentService service, ControllerUtils utils) {
         this.service = service;
         this.utils = utils;
     }
@@ -75,7 +76,7 @@ public class JsonContentManagementAPIController {
         return ResponseEntity.ok(jsonDtoList);
     }
 
-    @PutMapping
+    @PatchMapping
     public ResponseEntity<Void> updateJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
         service.updateOwnJsonContent(jsonDto);
         return ResponseEntity.noContent().build();

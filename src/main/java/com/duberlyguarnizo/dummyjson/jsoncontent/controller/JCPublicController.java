@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.duberlyguarnizo.dummyjson.jsoncontent;
+package com.duberlyguarnizo.dummyjson.jsoncontent.controller;
 
+import com.duberlyguarnizo.dummyjson.jsoncontent.JsonContentService;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentBasicDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentDetailDto;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
@@ -31,11 +32,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/public/json")
 @Tag(name = "Public", description = "Public endpoints for visitors")
-public class JsonContentPublicAPIController {
+public class JCPublicController {
     JsonContentService service;
     private final ControllerUtils utils;
 
-    public JsonContentPublicAPIController(JsonContentService service, ControllerUtils utils) {
+    public JCPublicController(JsonContentService service, ControllerUtils utils) {
         this.service = service;
         this.utils = utils;
     }

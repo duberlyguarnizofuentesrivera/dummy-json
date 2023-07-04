@@ -21,7 +21,6 @@ package com.duberlyguarnizo.dummyjson.jsoncontent.dto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.JsonContent;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Value;
-import org.hibernate.validator.constraints.URL;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -34,7 +33,7 @@ public class JsonContentBasicDto implements Serializable {
     Long id;
     @NotBlank
     String name;
-    @URL(protocol = "")
+
     String path;
 
     @Serial

@@ -16,8 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.duberlyguarnizo.dummyjson.appuser;
+package com.duberlyguarnizo.dummyjson.appuser.controller;
 
+import com.duberlyguarnizo.dummyjson.appuser.AppUser;
+import com.duberlyguarnizo.dummyjson.appuser.AppUserRepository;
+import com.duberlyguarnizo.dummyjson.appuser.AppUserRole;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserDetailDto;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserRegistrationDto;
 import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
