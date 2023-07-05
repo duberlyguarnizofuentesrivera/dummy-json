@@ -53,6 +53,7 @@ import static org.hamcrest.Matchers.*;
 @AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class JCManagementControllerTest {
+    static private String superJwt;
     @Container // IntelliJ IDE false positive at PostgreSQLContainer<> about try-with-resources
     public static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(
             "postgres:latest")
@@ -62,6 +63,8 @@ class JCManagementControllerTest {
     private static final List<Long> idList = new ArrayList<>(); //container for id's of originally created managers
     static Faker faker = new Faker();
     static private String adminJwt;
+    @Autowired
+    JsonContentRepository methodJcRepository;
     static private String clientJwt;
 
     @DynamicPropertySource
@@ -76,11 +79,11 @@ class JCManagementControllerTest {
     public static void setUp(@Autowired JwtUtil jwtUtil,
                              @Autowired JwtTokenService tokenService,
                              @Autowired AppUserRepository userRepository,
-                             @Autowired JsonContentRepository jcRepository,
+                             @Autowired JsonContentRepository setUpJcRepository,
                              @Autowired WebApplicationContext context,
                              @Autowired PasswordEncoder pwEncoder) {
         //create an ADMIN user
-        AppUser user = userRepository.save(AppUser.builder()
+        AppUser adminUser = userRepository.save(AppUser.builder()
                 .id(1L)
                 .names("admin user")
                 .email("adminemail@admin.com")
@@ -92,10 +95,22 @@ class JCManagementControllerTest {
                 .locked(false)
                 .build()
         );
+        AppUser supervisorUser = userRepository.save(AppUser.builder()
+                .id(2L)
+                .names("supervisor user")
+                .email("supervisor@supervisor.com")
+                .username("supervisor")
+                .password(pwEncoder.encode("pass"))
+                .idCard("987654321")
+                .role(AppUserRole.SUPERVISOR)
+                .active(true)
+                .locked(false)
+                .build()
+        );
 
         //create an AppUser with role USER
-        AppUser client = userRepository.save(AppUser.builder()
-                .id(2L)
+        AppUser clientUser = userRepository.save(AppUser.builder()
+                .id(3L)
                 .names("client user")
                 .email("clientmail@client.com")
                 .username("client")
@@ -105,12 +120,13 @@ class JCManagementControllerTest {
                 .active(true)
                 .locked(false)
                 .build()
-
         );
-        adminJwt = jwtUtil.generateToken(user);
-        tokenService.saveToken(adminJwt, user.getId());
-        clientJwt = jwtUtil.generateToken(client);
-        tokenService.saveToken(clientJwt, client.getId());
+        adminJwt = jwtUtil.generateToken(adminUser);
+        tokenService.saveToken(adminJwt, adminUser.getId());
+        superJwt = jwtUtil.generateToken(supervisorUser);
+        tokenService.saveToken(superJwt, supervisorUser.getId());
+        clientJwt = jwtUtil.generateToken(clientUser);
+        tokenService.saveToken(clientJwt, clientUser.getId());
         RestAssuredMockMvc.webAppContextSetup(context);
 
         String personJson = """
@@ -167,9 +183,13 @@ class JCManagementControllerTest {
                 .path("/json/3/books-example")
                 .build();
 
-        idList.add(jcRepository.save(jc1).getId());
-        idList.add(jcRepository.save(jc2).getId());
-        idList.add(jcRepository.save(jc3).getId());
+        setUpJcRepository.deleteAll(); //empty the repo before, in case some info remains
+        jc1.setCreatedBy(2L);
+        jc1.setCreatedBy(2L);
+        jc1.setCreatedBy(2L);
+        idList.add(setUpJcRepository.save(jc1).getId());
+        idList.add(setUpJcRepository.save(jc2).getId());
+        idList.add(setUpJcRepository.save(jc3).getId());
     }
 
     @Test
@@ -185,8 +205,8 @@ class JCManagementControllerTest {
                 .when()
                 .get("/api/v1/management/json/{id}", notExistingId)
                 .then()
-                .statusCode(404)
-                .body("status", equalTo(404));
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .body("status", equalTo(HttpStatus.NOT_FOUND.value()));
         given()
                 .log()
                 .ifValidationFails()
@@ -195,8 +215,8 @@ class JCManagementControllerTest {
                 .when()
                 .get("/api/v1/management/json/{id}", invalidFormatId)
                 .then()
-                .statusCode(400)
-                .body("status", equalTo(400));
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
     }
 
     @Test
@@ -211,7 +231,7 @@ class JCManagementControllerTest {
                 .when()
                 .get("/api/v1/management/json/{id}", existingId1)
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.OK.value())
                 .body("id", equalTo(existingId1.intValue()));
         Long existingId2 = idList.get(1);
         given()
@@ -222,7 +242,7 @@ class JCManagementControllerTest {
                 .when()
                 .get("/api/v1/management/json/{id}", existingId2)
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.OK.value())
                 .body("id", equalTo(existingId2.intValue()));
 
     }
@@ -277,10 +297,9 @@ class JCManagementControllerTest {
                 .when()
                 .get("/api/v1/management/json/{id}", existingId1)
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.OK.value())
                 .body("id", equalTo(existingId1.intValue()))
                 .assertThat().body(matchesJsonSchema(jsonSchema));
-
 
     }
 
@@ -297,17 +316,20 @@ class JCManagementControllerTest {
                 .when()
                 .get("/api/v1/management/json/{id}", existingId)
                 .then()
-                .statusCode(403);
+                .statusCode(HttpStatus.FORBIDDEN.value());
     }
 
     @Test
     @Order(4)
     void getJCByUserIdAndUserExistsAndHasJsonContent() {
         given()
+                .log()
+                .ifValidationFails()
                 .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
                 .accept(ContentType.JSON)
                 .when()
-                .get("/api/v1/management/json/by-user/{id}", 1)
+                .get("/api/v1/management/json/by-user/{id}", 2)
                 .then()
                 .statusCode(HttpStatus.OK.value())
                 .contentType(ContentType.JSON)
@@ -320,7 +342,10 @@ class JCManagementControllerTest {
     void getJCByUserIdAndUserExistsAndNoJsonContent() {
         // Assuming id 3 has no JsonContent
         given()
+                .log()
+                .ifValidationFails()
                 .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
                 .accept(ContentType.JSON)
                 .when()
                 .get("/api/v1/management/json/by-user/{id}", 3)
@@ -332,16 +357,205 @@ class JCManagementControllerTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     void getJCByUserIdAndUserDoesNotExist() {
         // Assuming id 100 does not exist
         given()
+                .log()
+                .ifValidationFails()
                 .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
                 .accept(ContentType.JSON)
                 .when()
                 .get("/api/v1/management/json/by-user/{id}", 100)
                 .then()
                 .statusCode(HttpStatus.NOT_FOUND.value())
                 .body("status", equalTo(HttpStatus.NOT_FOUND.value()));
+    }
+
+    @Test
+    @Order(7)
+    void getJCByUserIdWithIncorrectRole() {
+        // Assuming id 100 does not exist
+        given()
+                .log()
+                .ifValidationFails()
+                .header("Authorization", "Bearer " + clientJwt)
+                .and().header("Accept-Language", "es")
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/management/json/by-user/{id}", 100)
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value());
+        //.body("status", equalTo(HttpStatus.FORBIDDEN.value()));
+    }
+
+    @Test
+    @Order(8)
+    void testJsonContentDataAvailable() {
+        given()
+                .log()
+                .ifValidationFails()
+                .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/management/json")
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.JSON)
+                .body("content.size()", greaterThan(0))
+                .body("empty", equalTo(false));
+    }
+
+
+    @Test
+    @Order(9)
+    void getJcListWithIncorrectRoleReturnsError() {
+        // You might need to delete all the JsonContent data before running this test
+        given()
+                .log()
+                .ifValidationFails()
+                .header("Authorization", "Bearer " + clientJwt)
+                .and().header("Accept-Language", "es")
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/management/json")
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value());
+        //.body("status", equalTo(HttpStatus.FORBIDDEN.value()));
+        ;
+    }
+
+    @Test
+    @Order(10)
+    void testUpdateExistingJsonContentWithValidData() {
+        String jsonDto = """
+                {
+                	"id": 1,
+                	"name": "changed name",
+                	"json": "[{}]",
+                	"path": "/json/1/changed-name"
+                }
+                """;
+
+        given()
+                .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .contentType(ContentType.JSON)
+                .body(jsonDto)
+                .when()
+                .patch("/api/v1/management/json")
+                .then()
+                .statusCode(HttpStatus.NO_CONTENT.value());
+        given()
+                .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/api/v1/management/json/{id}", 1)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("id", equalTo(1))
+                .body("name", equalTo("changed name"))
+                .body("json", equalTo("[{}]"))
+                .body("path", equalTo("/json/1/changed-name"));
+    }
+
+    @Test
+    @Order(11)
+    void testUpdateNonExistentJsonContent() {
+        String jsonDto = """
+                {
+                	"id": 999,
+                	"name": "changed name",
+                	"json": "[{}]",
+                	"path": "/json/999/nonexistent"
+                }
+                """;
+
+        given()
+                .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .contentType(ContentType.JSON)
+                .body(jsonDto)
+                .when()
+                .patch("/api/v1/management/json")
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
+    @Order(12)
+    void testUpdateExistingJsonContentWithInvalidData() {
+        String jsonDto = "{ 'id': 1 , 'name': '', 'json': '{}', 'path': '/json/1/invalid' }"; // Assuming 'name' cannot be empty
+
+        given()
+                .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .contentType(ContentType.JSON)
+                .body(jsonDto)
+                .when()
+                .patch("/api/v1/management/json")
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @Order(13)
+    void testDeleteExistingJsonContent() {
+        // Assuming id 1 exists
+        given()
+                .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .accept(ContentType.JSON)
+                .when()
+                .delete("/api/v1/management/json/{id}", 1)
+                .then()
+                .statusCode(HttpStatus.NO_CONTENT.value());
+        given()
+                .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/management/json/{id}", 1)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .body("status", equalTo(HttpStatus.NOT_FOUND.value()));
+    }
+
+    @Test
+    @Order(14)
+    void testDeleteNonExistentJsonContent() {
+        // Assuming id 999 does not exist
+        given()
+                .header("Authorization", "Bearer " + adminJwt)
+                .and().header("Accept-Language", "es")
+                .accept(ContentType.JSON)
+                .when()
+                .delete("/api/v1/management/json/{id}", 999)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .body("status", equalTo(HttpStatus.NOT_FOUND.value()));
+    }
+
+    @Test
+    @Order(15)
+    void testNoJsonContentData() {// last method, as it requires to empty the DB
+        methodJcRepository.deleteAll();
+        given()
+                .log()
+                .ifValidationFails()
+                .header("Authorization", "Bearer " + superJwt)
+                .and().header("Accept-Language", "es")
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/management/json")
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.JSON)
+                .body("content", is(empty()))
+                .body("empty", equalTo(true));
+        ;
     }
 }

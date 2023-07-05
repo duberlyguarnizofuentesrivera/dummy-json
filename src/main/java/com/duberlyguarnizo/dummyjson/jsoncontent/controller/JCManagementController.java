@@ -78,13 +78,13 @@ public class JCManagementController {
 
     @PatchMapping
     public ResponseEntity<Void> updateJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
-        service.updateOwnJsonContent(jsonDto);
+        service.updateAnyJsonContent(jsonDto);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteJsonContentDetail(@PathVariable Long id) {
-        service.deleteOwnJsonContent(id);
+        service.deleteAnyJsonContent(id);
         return ResponseEntity.noContent().build();
     }
 }
