@@ -72,6 +72,10 @@ public class JsonContentService {
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public Page<JsonContentBasicDto> getAllByUserId(Long id, Pageable page) {
+        var userExist = repository.existsById(id);
+        if (!userExist) {
+            throw new IdNotFoundException("user with id" + id + "does not exist!"); //TODO: localize this
+        }
         var jsonList = repository.findAllByCreatedBy(id, page);
         return jsonList.map(mapper::toBasicDto);
     }

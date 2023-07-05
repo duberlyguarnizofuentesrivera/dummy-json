@@ -25,12 +25,14 @@ import com.duberlyguarnizo.dummyjson.jsoncontent.JsonContent;
 import com.duberlyguarnizo.dummyjson.jsoncontent.JsonContentRepository;
 import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
 import com.duberlyguarnizo.dummyjson.security.JwtUtil;
+import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -44,7 +46,7 @@ import java.util.List;
 
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchema;
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest
 @Testcontainers
@@ -60,6 +62,7 @@ class JCManagementControllerTest {
     private static final List<Long> idList = new ArrayList<>(); //container for id's of originally created managers
     static Faker faker = new Faker();
     static private String adminJwt;
+    static private String clientJwt;
 
     @DynamicPropertySource
     public static void properties(DynamicPropertyRegistry registry) {
@@ -76,7 +79,7 @@ class JCManagementControllerTest {
                              @Autowired JsonContentRepository jcRepository,
                              @Autowired WebApplicationContext context,
                              @Autowired PasswordEncoder pwEncoder) {
-
+        //create an ADMIN user
         AppUser user = userRepository.save(AppUser.builder()
                 .id(1L)
                 .names("admin user")
@@ -89,9 +92,25 @@ class JCManagementControllerTest {
                 .locked(false)
                 .build()
         );
-        String jwt = jwtUtil.generateToken(user);
-        adminJwt = jwt;
-        tokenService.saveToken(jwt, 1L);
+
+        //create an AppUser with role USER
+        AppUser client = userRepository.save(AppUser.builder()
+                .id(2L)
+                .names("client user")
+                .email("clientmail@client.com")
+                .username("client")
+                .password(pwEncoder.encode("pass"))
+                .idCard("98765432")
+                .role(AppUserRole.USER)
+                .active(true)
+                .locked(false)
+                .build()
+
+        );
+        adminJwt = jwtUtil.generateToken(user);
+        tokenService.saveToken(adminJwt, user.getId());
+        clientJwt = jwtUtil.generateToken(client);
+        tokenService.saveToken(clientJwt, client.getId());
         RestAssuredMockMvc.webAppContextSetup(context);
 
         String personJson = """
@@ -263,5 +282,66 @@ class JCManagementControllerTest {
                 .assertThat().body(matchesJsonSchema(jsonSchema));
 
 
+    }
+
+    @Test
+    @Order(3)
+    void getJCWithInvalidRoleReturnsError() {
+        //TODO: try this on postman to verify ProblemDetails body
+        Long existingId = idList.get(0);
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + clientJwt)
+                .and().header("Accept-Language", "es")
+                .when()
+                .get("/api/v1/management/json/{id}", existingId)
+                .then()
+                .statusCode(403);
+    }
+
+    @Test
+    @Order(4)
+    void getJCByUserIdAndUserExistsAndHasJsonContent() {
+        given()
+                .header("Authorization", "Bearer " + adminJwt)
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/management/json/by-user/{id}", 1)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.JSON)
+                .body("content.size()", greaterThan(0))
+                .body("empty", equalTo(false));
+    }
+
+    @Test
+    @Order(5)
+    void getJCByUserIdAndUserExistsAndNoJsonContent() {
+        // Assuming id 3 has no JsonContent
+        given()
+                .header("Authorization", "Bearer " + adminJwt)
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/management/json/by-user/{id}", 3)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.JSON)
+                .body("content", is(empty()))
+                .body("empty", equalTo(true));
+    }
+
+    @Test
+    @Order(5)
+    void getJCByUserIdAndUserDoesNotExist() {
+        // Assuming id 100 does not exist
+        given()
+                .header("Authorization", "Bearer " + adminJwt)
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/management/json/by-user/{id}", 100)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .body("status", equalTo(HttpStatus.NOT_FOUND.value()));
     }
 }
