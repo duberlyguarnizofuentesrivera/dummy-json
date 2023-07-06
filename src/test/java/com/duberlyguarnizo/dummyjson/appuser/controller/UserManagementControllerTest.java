@@ -61,7 +61,7 @@ class UserManagementControllerTest {
             .withDatabaseName("tc_db");
     private static final List<Long> idList = new ArrayList<>(); //container for id's of originally created managers
     static Faker faker = new Faker();
-    static private String supervisorJwt;
+    private static String supervisorJwt;
 
     @DynamicPropertySource
     public static void properties(DynamicPropertyRegistry registry) {
@@ -77,7 +77,7 @@ class UserManagementControllerTest {
                              @Autowired AppUserRepository userRepository,
                              @Autowired WebApplicationContext context,
                              @Autowired PasswordEncoder pwEncoder) {
-
+        userRepository.deleteAll();
         AppUser supervisor = userRepository.save(AppUser.builder()
                 .id(1000L)
                 .names("admin user")
@@ -90,9 +90,8 @@ class UserManagementControllerTest {
                 .locked(false)
                 .build()
         );
-        String jwt = jwtUtil.generateToken(supervisor);
-        supervisorJwt = jwt;
-        tokenService.saveToken(jwt, 1000L);
+        supervisorJwt = jwtUtil.generateToken(supervisor);
+        tokenService.saveToken(supervisorJwt, 1000L);
         RestAssuredMockMvc.webAppContextSetup(context);
 
     }

@@ -25,9 +25,9 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface JsonContentRepository extends JpaRepository<JsonContent, Long> {
-    public Page<JsonContent> findAllByCreatedBy(Long id, Pageable pageable);
+    Page<JsonContent> findAllByCreatedBy(Long id, Pageable pageable);
 
-    public Page<JsonContent> findByNameContainsIgnoreCase(String name, Pageable pageable);
+    Page<JsonContent> findByNameContainsIgnoreCase(String name, Pageable pageable);
 
     Page<JsonContent> findByNameIgnoreCaseAndCreatedBy(String name, Long currentAuditorId, Pageable pageable);
 }

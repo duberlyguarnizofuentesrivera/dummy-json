@@ -103,7 +103,7 @@ public class JsonContentService {
         var currentAuditorId = auditorAware
                 .getCurrentAuditor()
                 .orElseThrow(() -> new AccessDeniedException(utils.getMessage("error_auditor_empty")));
-        boolean isUnique = repository.findByNameIgnoreCaseAndCreatedBy(jsonDto.getName(), currentAuditorId, PageRequest.ofSize(0)).isEmpty();
+        boolean isUnique = repository.findByNameIgnoreCaseAndCreatedBy(jsonDto.getName(), currentAuditorId, PageRequest.ofSize(2)).isEmpty();
         if (!isUnique) {
             throw new RepositoryException(utils.getMessage("exception_repository_save_error_unique_name_json"));
         }
@@ -132,7 +132,7 @@ public class JsonContentService {
         }
 
         boolean isUnique = repository
-                .findByNameIgnoreCaseAndCreatedBy(jsonDto.getName(), currentAuditorId, PageRequest.ofSize(0))
+                .findByNameIgnoreCaseAndCreatedBy(jsonDto.getName(), currentAuditorId, PageRequest.ofSize(2))
                 .isEmpty();
         //check for original entity name, that name can be duplicated
         if (!isUnique && !jsonContent.getName().equals(jsonDto.getName())) {

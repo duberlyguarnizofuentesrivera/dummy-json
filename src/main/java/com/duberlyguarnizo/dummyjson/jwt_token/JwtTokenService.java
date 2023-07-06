@@ -127,7 +127,7 @@ public class JwtTokenService {
     }
 
     // Expire tokens every 5 hours so no token exists with more than 10 hours
-    @Scheduled(fixedDelay = EXPIRATION_TIME / 2)
+    @Scheduled(fixedDelay = EXPIRATION_TIME / 2) //TODO: test scheduled methods
     public void scheduledTokenExpirationTask() {
         var tenHoursAgo = LocalDateTime.now().minusHours(10);
         var expiredTokens = tokenRepository.findByCreatedDateBefore(tenHoursAgo);

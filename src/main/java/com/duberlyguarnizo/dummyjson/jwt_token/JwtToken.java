@@ -18,10 +18,7 @@
 
 package com.duberlyguarnizo.dummyjson.jwt_token;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -37,6 +34,7 @@ public class JwtToken {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private Long userId;
+    @Column(unique = true)
     private String token;
     private boolean revoked;
     private boolean expired;

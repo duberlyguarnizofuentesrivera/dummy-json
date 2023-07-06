@@ -62,9 +62,9 @@ class JCManagementControllerTest {
             .withDatabaseName("tc_db");
     private static final List<Long> idList = new ArrayList<>(); //container for id's of originally created managers
     static Faker faker = new Faker();
-    static private String adminJwt;
     @Autowired
     JsonContentRepository methodJcRepository;
+    static private String adminJwt;
     static private String clientJwt;
 
     @DynamicPropertySource
@@ -82,6 +82,7 @@ class JCManagementControllerTest {
                              @Autowired JsonContentRepository setUpJcRepository,
                              @Autowired WebApplicationContext context,
                              @Autowired PasswordEncoder pwEncoder) {
+        userRepository.deleteAll();
         //create an ADMIN user
         AppUser adminUser = userRepository.save(AppUser.builder()
                 .id(1L)
@@ -185,12 +186,13 @@ class JCManagementControllerTest {
 
         setUpJcRepository.deleteAll(); //empty the repo before, in case some info remains
         jc1.setCreatedBy(2L);
-        jc1.setCreatedBy(2L);
-        jc1.setCreatedBy(2L);
+        jc2.setCreatedBy(2L);
+        jc3.setCreatedBy(2L);
         idList.add(setUpJcRepository.save(jc1).getId());
         idList.add(setUpJcRepository.save(jc2).getId());
         idList.add(setUpJcRepository.save(jc3).getId());
     }
+
 
     @Test
     @Order(0)

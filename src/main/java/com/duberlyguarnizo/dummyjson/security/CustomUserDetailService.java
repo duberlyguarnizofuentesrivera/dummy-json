@@ -41,7 +41,7 @@ public class CustomUserDetailService implements UserDetailsService {
         if (possibleAppUser.isEmpty()) {
             throw new UsernameNotFoundException(utils.getMessage("exception_username_not_found", new String[]{username}));
         } else {
-            return possibleAppUser.get();
+            return possibleAppUser.get(0);
         }
     }
 }

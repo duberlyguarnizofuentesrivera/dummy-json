@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/authenticated/json")
 @SecurityRequirement(name = "Authorization Bearer")
-@Tag(name = "Authenticated", description = "Endpoints for authenticated users, specifically for managing JSON content")
+@Tag(name = "Authenticated", description = "Endpoints for authenticated users, specifically for managing its own JSON content")
 public class JCAuthenticatedController {
     JsonContentService service;
     private final ControllerUtils utils;
@@ -71,7 +71,7 @@ public class JCAuthenticatedController {
         return new ResponseEntity<>(id, HttpStatus.CREATED);
     }
 
-    @PutMapping
+    @PatchMapping
     public ResponseEntity<Void> updateJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
         service.updateOwnJsonContent(jsonDto);
         return ResponseEntity.noContent().build();

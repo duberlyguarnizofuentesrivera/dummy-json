@@ -57,9 +57,9 @@ class ManagerManagementControllerTest {
             "postgres:latest")
             .withUsername("tc_user")
             .withPassword("tc_password")
-            .withDatabaseName("tc_db");
+            .withDatabaseName("tc_db_manager_management");
     static Faker faker = new Faker();
-    static private String adminJwt;
+    private static String adminJwt;
     private static final List<Long> idList = new ArrayList<>(); //container for id's of originally created managers
 
     @DynamicPropertySource
@@ -76,6 +76,7 @@ class ManagerManagementControllerTest {
                              @Autowired AppUserRepository userRepository,
                              @Autowired WebApplicationContext context,
                              @Autowired PasswordEncoder pwEncoder) {
+        userRepository.deleteAll();
 
         AppUser user = userRepository.save(AppUser.builder()
                 .id(1L)
@@ -89,12 +90,12 @@ class ManagerManagementControllerTest {
                 .locked(false)
                 .build()
         );
-        String jwt = jwtUtil.generateToken(user);
-        adminJwt = jwt;
-        tokenService.saveToken(jwt, 1L);
+        //String jwt = jwtUtil.generateToken(user);
+        //adminJwt = jwt;
+        //tokenService.saveToken(jwt, 1L);
         RestAssuredMockMvc.webAppContextSetup(context);
-
     }
+
 
     @Test
     @DisplayName("Manager login with incorrect credentials return error")

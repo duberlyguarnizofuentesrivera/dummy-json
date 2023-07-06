@@ -56,7 +56,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             AppUser appUser = (AppUser) userDetailService.loadUserByUsername(username);
             if (jwtUtil.validateToken(jwt, appUser)) {
                 var token = tokenRepository.findByToken(jwt).orElse(null); //jwt has been validated already
-
                 if (token != null && !request.getServletPath().contains("invalid-jwt")) {
                     if (token.isExpired() || token.isRevoked()) {
                         //No ProblemDetail is triggered at this point,

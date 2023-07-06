@@ -26,6 +26,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -48,8 +49,12 @@ public class CustomAuditorAware implements AuditorAware<Long> {
                     (AppUser) authentication
                             .getPrincipal();
             String username = principal.getUsername();
-            Optional<AppUser> currentUser = appUserRepository.findByUsernameIgnoreCase(username);
-            return currentUser.map(AppUser::getId);
+            List<AppUser> currentUser = appUserRepository.findByUsernameIgnoreCase(username);
+            if (!currentUser.isEmpty()) {
+                return Optional.of(currentUser.get(0).getId());
+            } else {
+                return Optional.empty();
+            }
         }
     }
 }
