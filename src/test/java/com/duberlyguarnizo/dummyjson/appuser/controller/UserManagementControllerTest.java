@@ -32,6 +32,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -151,7 +152,7 @@ class UserManagementControllerTest {
                 .when()
                 .post("/api/v1/management/users")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST.value());
 
         given()
                 .log()
@@ -163,7 +164,7 @@ class UserManagementControllerTest {
                 .when()
                 .post("/api/v1/management/users")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST.value());
 
     }
 
@@ -199,7 +200,7 @@ class UserManagementControllerTest {
                 .when()
                 .post("/api/v1/management/users")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST.value());
 
         given()
                 .log()
@@ -211,7 +212,7 @@ class UserManagementControllerTest {
                 .when()
                 .post("/api/v1/management/users")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST.value());
 
     }
 
@@ -265,8 +266,8 @@ class UserManagementControllerTest {
                     .when()
                     .post("/api/v1/management/users")
                     .then()
-                    .statusCode(400)
-                    .body("status", equalTo(400));
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
         }
 
     }
@@ -287,8 +288,8 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .get("/api/v1/management/users/{id}", userId)
                 .then()
-                .statusCode(404)
-                .body("status", equalTo(404));
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .body("status", equalTo(HttpStatus.NOT_FOUND.value()));
 
         //Return HTTP 400 Bad Request on invalid id (like String instead of number)
         given()
@@ -298,8 +299,8 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .get("/api/v1/management/users/{id}", invalidId)
                 .then()
-                .statusCode(400)
-                .body("status", equalTo(400));
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
     }
 
     @Test
@@ -314,7 +315,7 @@ class UserManagementControllerTest {
                     .and().header("Accept-Language", "es")
                     .get("/api/v1/management/users/{id}", id)
                     .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK.value())
                     .body("id", equalTo(id.intValue()))
                     .body("username", not(emptyString()));
         }
@@ -332,7 +333,7 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .get("/api/v1/management/users")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.OK.value())
                 .body("numberOfElements", equalTo(10)) //10 users created in createUser() test method
                 .body("empty", equalTo(false)) //empty json property of page indicates that there is content
                 .body("content", hasSize(10));
@@ -379,7 +380,7 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .patch("/api/v1/management/users")
                 .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT.value());
 
         //now verify the changes:
         given()
@@ -389,7 +390,7 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .get("/api/v1/management/users/{id}", userId)
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.OK.value())
                 .body("id", equalTo(userId.intValue())).and() //cast to int, as JsonPath returns int instead of long
                 .body("names", equalTo(newUserNames)).and()
                 .body("idCard", equalTo(newUserIdCard)).and()
@@ -425,8 +426,8 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .patch("/api/v1/management/users")
                 .then()
-                .statusCode(400)
-                .body("status", equalTo(400));
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
     }
 
     @Test
@@ -451,8 +452,8 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .patch("/api/v1/management/users")
                 .then()
-                .statusCode(400)
-                .body("status", equalTo(400));
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
     }
 
     @Test
@@ -499,8 +500,8 @@ class UserManagementControllerTest {
                     .and().header("Accept-Language", "es")
                     .patch("/api/v1/management/users")
                     .then()
-                    .statusCode(400)
-                    .body("status", equalTo(400));
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
         }
     }
 
@@ -527,7 +528,7 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .delete("/api/v1/management/users/{id}", userId)
                 .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT.value());
 
         //Verify manager no longer exists
         given()
@@ -537,7 +538,7 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .get("/api/v1/management/users/{id}", userId)
                 .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND.value());
     }
 
     @Test
@@ -555,8 +556,8 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .delete("/api/v1/management/users/{id}", userId)
                 .then()
-                .statusCode(404)
-                .body("status", equalTo(404));
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .body("status", equalTo(HttpStatus.NOT_FOUND.value()));
 
         //Return HTTP 400 Bad Request on invalid id (like String instead of number)
         given()
@@ -566,8 +567,8 @@ class UserManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .delete("/api/v1/management/users/{id}", invalidId)
                 .then()
-                .statusCode(400)
-                .body("status", equalTo(400));
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
     }
 
 }

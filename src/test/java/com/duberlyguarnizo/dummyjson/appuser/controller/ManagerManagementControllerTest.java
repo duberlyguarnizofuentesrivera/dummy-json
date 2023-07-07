@@ -32,6 +32,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -191,7 +192,7 @@ class ManagerManagementControllerTest {
                 .when()
                 .post("/api/v1/management/managers")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST.value());
 
         given()
                 .log()
@@ -203,7 +204,7 @@ class ManagerManagementControllerTest {
                 .when()
                 .post("/api/v1/management/managers")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST.value());
 
     }
 
@@ -231,7 +232,7 @@ class ManagerManagementControllerTest {
                 .when()
                 .post("/api/v1/management/managers")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST.value());
 
     }
 
@@ -285,8 +286,8 @@ class ManagerManagementControllerTest {
                     .when()
                     .post("/api/v1/management/managers")
                     .then()
-                    .statusCode(400)
-                    .body("status", equalTo(400));
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
         }
 
     }
@@ -307,8 +308,8 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .get("/api/v1/management/managers/{id}", managerId)
                 .then()
-                .statusCode(404)
-                .body("status", equalTo(404));
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .body("status", equalTo(HttpStatus.NOT_FOUND.value()));
 
         //Return HTTP 400 Bad Request on invalid id (like String instead of number)
         given()
@@ -318,8 +319,8 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .get("/api/v1/management/managers/{id}", invalidId)
                 .then()
-                .statusCode(400)
-                .body("status", equalTo(400));
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
     }
 
     @Test
@@ -334,7 +335,7 @@ class ManagerManagementControllerTest {
                     .and().header("Accept-Language", "es")
                     .get("/api/v1/management/managers/{id}", id)
                     .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK.value())
                     .body("id", equalTo(id.intValue()))
                     .body("username", not(emptyString()));
         }
@@ -352,7 +353,7 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .get("/api/v1/management/managers")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.OK.value())
                 .body("numberOfElements", equalTo(11)) //remember original admin? That's why 10+1
                 .body("content", hasSize(11))
                 .body("empty", equalTo(false));
@@ -399,7 +400,7 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .patch("/api/v1/management/managers")
                 .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT.value());
 
         //now verify the changes:
         given()
@@ -409,7 +410,7 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .get("/api/v1/management/managers/{id}", managerId)
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.OK.value())
                 .body("id", equalTo(managerId.intValue())).and() //cast to int, as JsonPath returns int instead of long
                 .body("names", equalTo(newManagerNames)).and()
                 .body("idCard", equalTo(newManagerIdCard)).and()
@@ -419,7 +420,7 @@ class ManagerManagementControllerTest {
                 .body("locked", equalTo(manager.isLocked())).and()
                 .body("active", equalTo(manager.isActive())).and()
                 .body("createdBy", equalTo(manager.getCreatedBy().intValue())).and()
-                .body("createdDate", equalTo(manager.getCreatedDate().toString()));
+                .body("createdDate", equalTo(manager.getCreatedDate().toString().substring(0, 26)));//Fix additional 0's added when converted to String
     }
 
     @Test
@@ -445,8 +446,8 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .patch("/api/v1/management/managers")
                 .then()
-                .statusCode(400)
-                .body("status", equalTo(400));
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
     }
 
     @Test
@@ -471,8 +472,8 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .patch("/api/v1/management/managers")
                 .then()
-                .statusCode(400)
-                .body("status", equalTo(400));
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
     }
 
     @Test
@@ -519,8 +520,8 @@ class ManagerManagementControllerTest {
                     .and().header("Accept-Language", "es")
                     .patch("/api/v1/management/managers")
                     .then()
-                    .statusCode(400)
-                    .body("status", equalTo(400));
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
         }
     }
 
@@ -547,7 +548,7 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .delete("/api/v1/management/managers/{id}", managerId)
                 .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT.value());
 
         //Verify manager no longer exists
         given()
@@ -557,7 +558,7 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .get("/api/v1/management/managers/{id}", managerId)
                 .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND.value());
     }
 
     @Test
@@ -575,8 +576,8 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .delete("/api/v1/management/managers/{id}", managerId)
                 .then()
-                .statusCode(404)
-                .body("status", equalTo(404));
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .body("status", equalTo(HttpStatus.NOT_FOUND.value()));
 
         //Return HTTP 400 Bad Request on invalid id (like String instead of number)
         given()
@@ -586,8 +587,8 @@ class ManagerManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .delete("/api/v1/management/managers/{id}", invalidId)
                 .then()
-                .statusCode(400)
-                .body("status", equalTo(400));
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
     }
 
 }

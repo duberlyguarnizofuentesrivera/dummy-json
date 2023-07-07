@@ -41,29 +41,31 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
 @Testcontainers
 @AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class JCAuthenticatedControllerTest {
+class JCPublicControllerTest {
     @Container // IntelliJ IDE false positive at PostgreSQLContainer<> about try-with-resources
     public static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(
             "postgres:latest")
             .withUsername("tc_user")
             .withPassword("tc_password")
             .withDatabaseName("tc_db");
-    private static final List<Long> idList = new ArrayList<>(); //container for id's of originally created managers
+    private static final Long loggedUserId = 3L;
+    private static final List<Long> idList = new ArrayList<>(); //container for id's of originally created JsonContents
     static Faker faker = new Faker();
-    private static String superJwt;
-    private static String adminJwt;
-    private static String clientJwt;
+    private static String loggedUserJwt;
+    @Autowired
+    JsonContentRepository methodJcRepository;
 
     @DynamicPropertySource
     public static void properties(DynamicPropertyRegistry registry) {
@@ -80,35 +82,12 @@ class JCAuthenticatedControllerTest {
                              @Autowired JsonContentRepository setUpJcRepository,
                              @Autowired WebApplicationContext context,
                              @Autowired PasswordEncoder pwEncoder) {
-        //create an ADMIN user
-        AppUser adminUser = userRepository.save(AppUser.builder()
-                .id(1L)
-                .names("admin user")
-                .email("adminemail@admin.com")
-                .username("admin")
-                .password(pwEncoder.encode("pass"))
-                .idCard("12345678")
-                .role(AppUserRole.ADMIN)
-                .active(true)
-                .locked(false)
-                .build()
-        );
-        AppUser supervisorUser = userRepository.save(AppUser.builder()
-                .id(2L)
-                .names("supervisor user")
-                .email("supervisor@supervisor.com")
-                .username("supervisor")
-                .password(pwEncoder.encode("pass"))
-                .idCard("987654321")
-                .role(AppUserRole.SUPERVISOR)
-                .active(true)
-                .locked(false)
-                .build()
-        );
+        userRepository.deleteAll();
+
 
         //create an AppUser with role USER
         AppUser clientUser = userRepository.save(AppUser.builder()
-                .id(3L)
+                .id(loggedUserId)
                 .names("client user")
                 .email("clientmail@client.com")
                 .username("client")
@@ -120,12 +99,8 @@ class JCAuthenticatedControllerTest {
                 .build()
         );
 
-        adminJwt = jwtUtil.generateToken(adminUser);
-        tokenService.saveToken(adminJwt, adminUser.getId());
-        superJwt = jwtUtil.generateToken(supervisorUser);
-        tokenService.saveToken(superJwt, supervisorUser.getId());
-        clientJwt = jwtUtil.generateToken(clientUser);
-        tokenService.saveToken(clientJwt, clientUser.getId());
+        loggedUserJwt = jwtUtil.generateToken(clientUser);
+        tokenService.saveToken(loggedUserJwt, clientUser.getId());
         RestAssuredMockMvc.webAppContextSetup(context);
 
         String personJson = """
@@ -183,196 +158,208 @@ class JCAuthenticatedControllerTest {
                 .build();
 
         setUpJcRepository.deleteAll(); //empty the repo before, in case some info remains
-        jc1.setCreatedBy(3L);
-        jc2.setCreatedBy(3L);
-        jc3.setCreatedBy(3L);
+        jc1.setCreatedBy(2L);
+        jc2.setCreatedBy(2L);
+        jc3.setCreatedBy(2L);
         idList.add(setUpJcRepository.save(jc1).getId());
         idList.add(setUpJcRepository.save(jc2).getId());
         idList.add(setUpJcRepository.save(jc3).getId());
     }
 
     @Test
-    @DisplayName("Get JC detail with valid, invalid and non existing ID returns expected result")
+    @DisplayName("Test get public JC detail by ID")
     @Order(0)
-    void getJsonContentDetail() {
-        //test exising ID
-        var idToGet = idList.get(0);
-        given()
-                .log()
-                .ifValidationFails()
-                .header("authorization", "Bearer " + clientJwt)
-                .and().header("Accept-Language", "es")
-                .get("/api/v1/authenticated/json/{id}", idToGet)
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("id", equalTo(idToGet.intValue()))
-                .body("name", notNullValue())
-                .body("path", notNullValue())
-                .body("json", notNullValue());
+    void getJsonContentDetail_whenContentExists_returnsContent() {
 
-        //Test not existing ID
-        given()
-                .log()
-                .ifValidationFails()
-                .header("authorization", "Bearer " + clientJwt)
-                .and().header("Accept-Language", "es")
-                .get("/api/v1/authenticated/json/{id}", 999)
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value())
-                .body("status", equalTo(HttpStatus.NOT_FOUND.value()));
+        for (Long id : idList) {
+            given()
+                    .log()
+                    .ifValidationFails()
+                    .accept(ContentType.JSON)
+                    .when()
+                    .get("/api/v1/public/json/{id}", id)
+                    .then()
+                    .statusCode(HttpStatus.OK.value())
+                    .contentType(ContentType.JSON)
+                    .body("id", equalTo(id.intValue()))
+                    .body("path", notNullValue())
+                    .body("name", notNullValue())
+                    .body("json", notNullValue());
+        }
+    }
 
-        //Test invalid ID
+    @Test
+    @DisplayName("Test get public JC detail by ID as a logged user")
+    @Order(1)
+    void getJsonContentDetail_asLoggedUser_whenContentExists_returnsContent() {
+
+        for (Long id : idList) {
+
+            given()
+                    .log()
+                    .ifValidationFails()
+                    .accept(ContentType.JSON)
+                    .header("authorization", "Bearer " + loggedUserJwt)
+                    .and().header("Accept-Language", "es")
+                    .when()
+                    .get("/api/v1/public/json/{id}", id)
+                    .then()
+                    .statusCode(HttpStatus.OK.value())
+                    .contentType(ContentType.JSON)
+                    .body("id", equalTo(id.intValue()))
+                    .body("path", notNullValue())
+                    .body("name", notNullValue())
+                    .body("json", notNullValue());
+        }
+    }
+
+    @Test
+    @DisplayName("Test get public JC detail by non existing ID")
+    @Order(2)
+    void getJsonContentDetail_whenContentDoesNotExist_returnsNotFound() {
+        long id = 999L;
         given()
                 .log()
                 .ifValidationFails()
-                .header("authorization", "Bearer " + clientJwt)
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/public/json/" + id)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+
+    }
+
+    @Test
+    @DisplayName("Test get public JC detail by non existing ID as a logged user")
+    @Order(3)
+    void getJsonContentDetail_asLoggedUser_whenContentDoesNotExist_returnsNotFound() {
+        long id = 999L;
+
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + loggedUserJwt)
                 .and().header("Accept-Language", "es")
-                .get("/api/v1/authenticated/json/{id}", "notValidId")
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/public/json/" + id)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
+    @DisplayName("Test get public JC detail by invalid ID")
+    @Order(4)
+    void getJsonContentDetail_whenIdIsInvalid_returnsBadRequest() {
+        String id = "invalid-id";
+        given()
+                .log()
+                .ifValidationFails()
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/public/json/" + id)
                 .then()
                 .statusCode(HttpStatus.BAD_REQUEST.value())
                 .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
-
     }
 
     @Test
-    @DisplayName("Get JC list for current logged user returns list")
-    @Order(1)
-    void getJsonContentCurrentUserList() {
+    @DisplayName("Test get public JC detail by invalid ID as a logged user")
+    @Order(5)
+    void getJsonContentDetail_asLoggedUser_whenIdIsInvalid_returnsBadRequest() {
+        String id = "invalid-id";
+
         given()
                 .log()
                 .ifValidationFails()
-                .header("authorization", "Bearer " + clientJwt)
-                .and().header("Accept-Language", "es")
-                .when()
-                .get("/api/v1/authenticated/json")
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("size", equalTo(15))
-                .body("content", hasSize(3)) // Counting that the setUp method saves three objects
-                .body("content[0].name", notNullValue())
-                .body("content[0].path", notNullValue());
-
-    }
-
-    @Test
-    @DisplayName("Create JC persists JC in DB and returns it when queried by ID")
-    @Order(2)
-    void createJsonContentDetail() {
-
-        String newJsonContent = """
-                {
-                  "name": "New Json Content",
-                  "json": "['key':'value']",
-                  "path": "/json/4/new-json-content"
-                }""";
-
-        Long newId =
-                given()
-                        .log()
-                        .ifValidationFails()
-                        .header("authorization", "Bearer " + clientJwt)
-                        .and().header("Accept-Language", "es")
-                        .accept(ContentType.JSON)
-                        .contentType(ContentType.JSON)
-                        .body(newJsonContent)
-                        .when()
-                        .post("/api/v1/authenticated/json")
-                        .then()
-                        .statusCode(HttpStatus.CREATED.value())
-                        .extract()
-                        .as(Long.class);
-
-        assertNotNull(newId);
-
-        // Retrieve new JsonContent to confirm addition
-        given()
-                .log()
-                .ifValidationFails()
-                .header("authorization", "Bearer " + clientJwt)
+                .header("authorization", "Bearer " + loggedUserJwt)
                 .and().header("Accept-Language", "es")
                 .accept(ContentType.JSON)
                 .when()
-                .get("/api/v1/authenticated/json/{id}", newId)
+                .get("/api/v1/public/json/" + id)
                 .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("name", equalTo("New Json Content"))
-                .body("json", equalTo("['key':'value']"))
-                .body("path", equalTo("/json/4/new-json-content"));
-
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
     }
 
-    @Test
-    @DisplayName("Patch JC modifies DB and returns modified version when queried")
-    @Order(3)
-    void updateJsonContentDetail() {
 
-        Long idToUpdate = idList.get(0); // Modify as necessary
-        String updatedJsonContent = """
-                {
-                  "id": %d,
-                  "name": "Updated Json Content",
-                  "json": "{'key': 'value'}",
-                  "path": "/json/4/updated-json-content"
-                }""".formatted(idToUpdate);
+    @Test
+    @DisplayName("Test get public JC detail by valid name")
+    @Order(6)
+    void getJsonContentDetailByName_whenContentExists_returnsPageContent() {
+        String existingName = "pharmacy product";
 
         given()
                 .log()
                 .ifValidationFails()
-                .header("authorization", "Bearer " + clientJwt)
-                .and().header("Accept-Language", "es")
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/public/json/by-name/" + URLEncoder.encode(existingName, StandardCharsets.UTF_8))
+                .then()
+                .statusCode(HttpStatus.OK.value())
                 .contentType(ContentType.JSON)
-                .body(updatedJsonContent)
-                .when()
-                .patch("/api/v1/authenticated/json")
-                .then()
-                .statusCode(HttpStatus.NO_CONTENT.value());
-
-        // Retrieve to confirm update
-        given()
-                .log()
-                .ifValidationFails()
-                .header("authorization", "Bearer " + clientJwt)
-                .and().header("Accept-Language", "es")
-                .accept(ContentType.JSON)
-                .when()
-                .get("/api/v1/authenticated/json/{id}", idToUpdate)
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("name", equalTo("Updated Json Content"))
-                .body("json", equalTo("{'key': 'value'}"))
-                .body("path", equalTo("/json/4/updated-json-content"));
-
+                .body("content", not(emptyArray()))
+                .body("content[0].name", equalTo("pharmacy product"))
+                .body("empty", equalTo(false));
     }
 
     @Test
-    @DisplayName("Delete JC deletes it from DB and returns 404 when queried")
-    @Order(4)
-    void deleteJsonContentDetail() {
-
-        Long idToDelete = idList.get(0); // Update index to choose id to delete
+    @DisplayName("Test get public JC detail by valid name as logged user")
+    @Order(7)
+    void getJsonContentDetailByName_asLoggedUser_whenContentExists_returnsPageContent() {
+        String existingName = "pharmacy product";
 
         given()
                 .log()
                 .ifValidationFails()
-                .header("authorization", "Bearer " + clientJwt)
+                .header("authorization", "Bearer " + loggedUserJwt)
                 .and().header("Accept-Language", "es")
                 .accept(ContentType.JSON)
                 .when()
-                .delete("/api/v1/authenticated/json/{id}", idToDelete)
+                .get("/api/v1/public/json/by-name/" + URLEncoder.encode(existingName, StandardCharsets.UTF_8))
                 .then()
-                .statusCode(HttpStatus.NO_CONTENT.value());
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.JSON)
+                .body("content", not(emptyArray()))
+                .body("content[0].name", equalTo("pharmacy product"))
+                .body("empty", equalTo(false));
+    }
 
-        // Attempt to retrieve deleted JsonContent to confirm deletion
+    @Test
+    @DisplayName("Test get public JC detail by non existing name")
+    @Order(8)
+    void getJsonContentDetailByName_whenContentDoesNotExist_returnsEmptyPage() {
+        String nonExistingName = "plea for innocence";
+
         given()
                 .log()
                 .ifValidationFails()
-                .header("authorization", "Bearer " + clientJwt)
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/v1/public/json/by-name/" + URLEncoder.encode(nonExistingName, StandardCharsets.UTF_8))
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.JSON)
+                .body("empty", equalTo(true));
+    }
+
+    @Test
+    @DisplayName("Test get public JC detail by non existing name as logged user")
+    @Order(9)
+    void getJsonContentDetailByName_asLoggedUser_whenContentDoesNotExist_returnsEmptyPage() {
+        String nonExistingName = "plea for innocence";
+        given()
+                .log()
+                .ifValidationFails()
+                .header("authorization", "Bearer " + loggedUserJwt)
                 .and().header("Accept-Language", "es")
                 .accept(ContentType.JSON)
                 .when()
-                .get("/api/v1/authenticated/json/{id}", idToDelete)
+                .get("/api/v1/public/json/by-name/" + URLEncoder.encode(nonExistingName, StandardCharsets.UTF_8))
                 .then()
-                .statusCode(HttpStatus.NOT_FOUND.value());
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.JSON)
+                .body("empty", equalTo(true));
     }
 
 }

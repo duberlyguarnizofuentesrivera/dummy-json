@@ -28,6 +28,7 @@ import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,6 +101,7 @@ class JwtRequestFilterTest {
     private JwtRequestFilter filter;
 
     @Test
+    @DisplayName("JWT Req. Filter won't process with present and invalid JWT string")
     void shouldNotProcessWithInvalidExistingAuthHeader() throws ServletException, IOException {
         String authorizationHeader = "invalid_auth_ header";
 
@@ -113,8 +115,9 @@ class JwtRequestFilterTest {
     }
 
     @Test
+    @DisplayName("JWT Req. Filter won't  process with present and valid JWT string but non existing user")
     void shouldNotProcessWithExistingValidAuthHeaderAndNonExistingUser() throws ServletException, IOException {
-        //example jwt_token with user "peterg" (for Peter Griffin, from Family Guy)... token should be invalid
+        //Example jwt_token with user "peterg" (for Peter Griffin, from Family Guy)... token should be invalid
         String authorizationHeader = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwZXRlcmciLCJpYXQiOjE2ODQ3NzQxODEsImV4cCI6MTY4NDgxMDE4MX0.JZyoRiQ553ujDFlaUWL5HJPW8Ev2OZXNdT2XzW5lDXw";
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/secured_endpoint");

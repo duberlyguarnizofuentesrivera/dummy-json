@@ -29,6 +29,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+
 @RestController
 @RequestMapping("/api/v1/public/json")
 @Tag(name = "Public", description = "Public endpoints for visitors")
@@ -47,7 +50,7 @@ public class JCPublicController {
         return ResponseEntity.ok(jsonDto);
     }
 
-    @GetMapping("/by-name/{name}")
+    @GetMapping("/by-name/{name}") //TODO: verify if it's better to use a RequestParam...
     public ResponseEntity<Page<JsonContentBasicDto>> getJsonContentDetailByName(@PathVariable String name,
                                                                                 @RequestParam(required = false, defaultValue = "0") int page,
                                                                                 @RequestParam(required = false, defaultValue = "15") int size,
@@ -55,7 +58,7 @@ public class JCPublicController {
         PageRequest pageRequest = PageRequest.of(page,
                 size,
                 Sort.by(utils.processPageSort(sort)));
-        var jsonDto = service.getByName(name, pageRequest);
+        var jsonDto = service.getByName(URLDecoder.decode(name, StandardCharsets.UTF_8), pageRequest);
         return ResponseEntity.ok(jsonDto);
     }
 

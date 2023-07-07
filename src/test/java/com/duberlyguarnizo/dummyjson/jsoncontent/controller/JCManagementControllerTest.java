@@ -53,7 +53,7 @@ import static org.hamcrest.Matchers.*;
 @AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class JCManagementControllerTest {
-    static private String superJwt;
+    private static String superJwt;
     @Container // IntelliJ IDE false positive at PostgreSQLContainer<> about try-with-resources
     public static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(
             "postgres:latest")
@@ -64,8 +64,8 @@ class JCManagementControllerTest {
     static Faker faker = new Faker();
     @Autowired
     JsonContentRepository methodJcRepository;
-    static private String adminJwt;
-    static private String clientJwt;
+    private static String adminJwt;
+    private static String clientJwt;
 
     @DynamicPropertySource
     public static void properties(DynamicPropertyRegistry registry) {
