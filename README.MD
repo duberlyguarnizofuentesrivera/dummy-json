@@ -37,9 +37,13 @@ avoided by IP filtering and limiting number of queries in a space of time.
 
 You need to configure the following environment variables for the program to work properly:
 
+- FIRST_ADMIN_USERNAME: The username for the first admin created.
+- FIRST_ADMIN_PASSWORD: The password for the first admin created.
 - JWT_KEY: Your key to encode the JSON Web Tokens. Keep this secret!
 - HOST_NAME: Your domain name, ie: [duberlyguarnizo.com](https://duberlyguarnizo.com/)
 
+The environment variables related to the first admin created are only used for the first boot. If any user exists with
+role ADMIN, the creation is skipped. Still, the presence of those environment variables is required.
 ### User
 
 A user is either an admin, a supervisor, or a "client" (user who creates an account and uploads new JsonContent).It has
@@ -57,6 +61,33 @@ the associated user, so multiple concurrent tokens can be created per user (i.e.
 ### Custom exceptions
 
 To be thrown and managed with ProblemDetails API.
+
+## Run
+
+### Swagger
+
+You can access the Swagger UI at: http://localhost:8080/swagger-ui/index.html where you will find all API definitions.
+
+### Authentication
+
+Send an AuthenticationRequest body, via POST request to http://localhost:8080/api/v1/auth/authenticate
+with username and password fields. You will get a JWT token that you must attach in your headers as a bearer token.
+The body must be formed like this:
+
+```json
+{
+  "username": "your-user-name",
+  "password": "your-password"
+}
+```
+
+And the response, if correct credentials have been submitted:
+
+```json
+{
+  "jwt": "your-long-jwt-auth-token"
+}
+```
 
 ## TODO
 

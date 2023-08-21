@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/management/users")
 @SecurityRequirement(name = "Authorization Bearer") //swagger UI
-@Tag(name = "Managers", description = "Endpoints of CRUD methods  for managers") //Swagger UI
+@Tag(name = "Managers", description = "Endpoints of CRUD methods  for managers to manage users") //Swagger UI
 @RequiredArgsConstructor
 public class UserManagementController {
     private final AppUserService appUserService;
@@ -66,9 +66,9 @@ public class UserManagementController {
         return new ResponseEntity<>(result, HttpStatus.CREATED);
     }
 
-    @PatchMapping
-    public ResponseEntity<Void> updateUser(@Valid @RequestBody AppUserRegistrationDto registrationDto) {
-        appUserService.partialUpdateUser(registrationDto);
+    @PatchMapping("/{id}")
+    public ResponseEntity<Void> updateUser(@PathVariable Long id, @Valid @RequestBody AppUserRegistrationDto registrationDto) {
+        appUserService.partialUpdateUser(id, registrationDto);
         return ResponseEntity.noContent().build();
     }
 
@@ -84,7 +84,7 @@ public class UserManagementController {
      * @param id the id of the user to deactivate.
      * @return a ResponseEntity with a void body. The response status will be 200 (Ok) on success.
      */
-    @PatchMapping("/{id}")
+    @PatchMapping("/deactivate/{id}")
     public ResponseEntity<Void> deactivateUser(@PathVariable Long id) {
         appUserService.deactivateUser(id);
         return ResponseEntity.ok().build();

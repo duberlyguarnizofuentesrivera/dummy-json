@@ -38,6 +38,8 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
     Optional<AppUser> findByUsernameContainsIgnoreCase(String username);
 
+    Integer countAppUserByRole(AppUserRole role);
+
     Page<AppUser> findByRoleIn(List<AppUserRole> roles, Pageable page);
 
     Page<AppUser> findByRole(AppUserRole role, Pageable page);

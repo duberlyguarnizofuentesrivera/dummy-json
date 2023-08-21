@@ -76,9 +76,9 @@ public class JCManagementController {
         return ResponseEntity.ok(jsonDtoList);
     }
 
-    @PatchMapping
-    public ResponseEntity<Void> updateJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
-        service.updateAnyJsonContent(jsonDto);
+    @PatchMapping("/{id}")
+    public ResponseEntity<Void> updateJsonContentDetail(@PathVariable Long id, @Valid @RequestBody JsonContentCreationDto jsonDto) {
+        service.updateAnyJsonContent(id, jsonDto);
         return ResponseEntity.noContent().build();
     }
 

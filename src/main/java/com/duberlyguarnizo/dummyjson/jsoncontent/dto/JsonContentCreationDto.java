@@ -20,9 +20,10 @@ package com.duberlyguarnizo.dummyjson.jsoncontent.dto;
 
 import com.duberlyguarnizo.dummyjson.jsoncontent.JsonContent;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 import lombok.Value;
-import org.hibernate.validator.constraints.Length;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -30,14 +31,14 @@ import java.io.Serializable;
 /**
  * DTO for {@link JsonContent}
  */
-@Value
+@NoArgsConstructor(force = true)
+@AllArgsConstructor
 @Builder
+@Value
 public class JsonContentCreationDto implements Serializable {
-    Long id;
     @NotBlank
     String name;
     @NotBlank
-    @Length(message = "Your JSON response is not the right size!", min = 3, max = 2048)
     String json;
 
     String path;

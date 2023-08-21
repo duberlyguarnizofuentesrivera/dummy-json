@@ -19,33 +19,25 @@
 package com.duberlyguarnizo.dummyjson.appuser.controller;
 
 import com.duberlyguarnizo.dummyjson.appuser.AppUserService;
-import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserDetailDto;
 import com.duberlyguarnizo.dummyjson.appuser.dto.AppUserRegistrationDto;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/authenticated/user")
-@SecurityRequirement(name = "Authorization Bearer") //swagger UI
-@Tag(name = "Users", description = "Endpoints of CRUD methods  for users") //Swagger UI
 @RequiredArgsConstructor
-public class AppUserController {
+@RequestMapping("/api/v1/public/users")
+public class AppUserPublicController {
     private final AppUserService service;
 
-    @GetMapping("/profile")
-    public ResponseEntity<AppUserDetailDto> getUserProfile() {
-        var currentUser = service.getCurrentUser();
-        return ResponseEntity.ok(currentUser);
+    @PostMapping
+    public ResponseEntity<Long> createUser(@RequestBody AppUserRegistrationDto dto) {
+        Long createdId = service.createUser(dto);
+        return new ResponseEntity<>(createdId, HttpStatus.CREATED);
     }
 
-    @PatchMapping
-    public ResponseEntity<Long> editUserProfile(@RequestBody AppUserRegistrationDto dto) {
-        var currentUser = service.getCurrentUser();
-        service.partialUpdateOwnUser(dto);
-        return new ResponseEntity<>(currentUser.getId(), HttpStatus.NO_CONTENT);
-    }
 }

@@ -41,7 +41,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/management/managers")
 @SecurityRequirement(name = "Authorization Bearer") //swagger UI
-@Tag(name = "Managers", description = "Endpoints of CRUD methods  for managers") //Swagger UI
+@Tag(name = "Managers", description = "Endpoints of CRUD methods  for managers to manage other managers") //Swagger UI
 public class ManagerManagementController {
     private final AppUserService appUserService;
     private final ControllerUtils utils;
@@ -103,9 +103,9 @@ public class ManagerManagementController {
      * @param registrationDto the registration DTO containing the updated details of the manager. Must include ID field.
      * @return a ResponseEntity with no content (204 No Content) on successful update.
      */
-    @PatchMapping
-    public ResponseEntity<Void> updateManager(@Valid @RequestBody AppUserRegistrationDto registrationDto) {
-        appUserService.partialUpdateManager(registrationDto);
+    @PatchMapping("/{id}")
+    public ResponseEntity<Void> updateManager(@PathVariable Long id, @Valid @RequestBody AppUserRegistrationDto registrationDto) {
+        appUserService.partialUpdateManager(id, registrationDto);
         return ResponseEntity.noContent().build();
     }
 
@@ -122,14 +122,13 @@ public class ManagerManagementController {
     }
 
 
-
     /**
      * Deactivates a manager with the given id. Only role ADMIN can deactivate a manager.
      *
      * @param id the id of the manager to deactivate.
      * @return a ResponseEntity with a void body. The response status will be 200 (Ok) on success.
      */
-    @PatchMapping("/{id}")
+    @PatchMapping("/deactivate/{id}")
     public ResponseEntity<Void> deactivateManager(@PathVariable Long id) {
         appUserService.deactivateManager(id);
         return ResponseEntity.ok().build();

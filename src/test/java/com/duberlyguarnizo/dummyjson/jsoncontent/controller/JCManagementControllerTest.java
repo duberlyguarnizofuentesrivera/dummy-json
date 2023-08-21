@@ -67,6 +67,11 @@ class JCManagementControllerTest {
     private static String adminJwt;
     private static String clientJwt;
 
+    private static Long adminId;
+    private static Long supervisorId;
+    private static Long clientId;
+
+
     @DynamicPropertySource
     public static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", container::getJdbcUrl);
@@ -85,7 +90,6 @@ class JCManagementControllerTest {
         userRepository.deleteAll();
         //create an ADMIN user
         AppUser adminUser = userRepository.save(AppUser.builder()
-                .id(1L)
                 .names("admin user")
                 .email("adminemail@admin.com")
                 .username("admin")
@@ -96,8 +100,9 @@ class JCManagementControllerTest {
                 .locked(false)
                 .build()
         );
+        adminId = adminUser.getId();
+
         AppUser supervisorUser = userRepository.save(AppUser.builder()
-                .id(2L)
                 .names("supervisor user")
                 .email("supervisor@supervisor.com")
                 .username("supervisor")
@@ -108,10 +113,10 @@ class JCManagementControllerTest {
                 .locked(false)
                 .build()
         );
+        supervisorId = supervisorUser.getId();
 
         //create an AppUser with role USER
         AppUser clientUser = userRepository.save(AppUser.builder()
-                .id(3L)
                 .names("client user")
                 .email("clientmail@client.com")
                 .username("client")
@@ -122,6 +127,8 @@ class JCManagementControllerTest {
                 .locked(false)
                 .build()
         );
+        clientId = clientUser.getId();
+
         adminJwt = jwtUtil.generateToken(adminUser);
         tokenService.saveToken(adminJwt, adminUser.getId());
         superJwt = jwtUtil.generateToken(supervisorUser);
@@ -185,9 +192,9 @@ class JCManagementControllerTest {
                 .build();
 
         setUpJcRepository.deleteAll(); //empty the repo before, in case some info remains
-        jc1.setCreatedBy(2L);
-        jc2.setCreatedBy(2L);
-        jc3.setCreatedBy(2L);
+        jc1.setCreatedBy(supervisorId);
+        jc2.setCreatedBy(supervisorId);
+        jc3.setCreatedBy(supervisorId);
         idList.add(setUpJcRepository.save(jc1).getId());
         idList.add(setUpJcRepository.save(jc2).getId());
         idList.add(setUpJcRepository.save(jc3).getId());
@@ -331,7 +338,7 @@ class JCManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .accept(ContentType.JSON)
                 .when()
-                .get("/api/v1/management/json/by-user/{id}", 2)
+                .get("/api/v1/management/json/by-user/{id}", supervisorId)
                 .then()
                 .statusCode(HttpStatus.OK.value())
                 .contentType(ContentType.JSON)
@@ -350,7 +357,7 @@ class JCManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .accept(ContentType.JSON)
                 .when()
-                .get("/api/v1/management/json/by-user/{id}", 3)
+                .get("/api/v1/management/json/by-user/{id}", clientId)
                 .then()
                 .statusCode(HttpStatus.OK.value())
                 .contentType(ContentType.JSON)
@@ -434,12 +441,12 @@ class JCManagementControllerTest {
     void testUpdateExistingJsonContentWithValidData() {
         String jsonDto = """
                 {
-                	"id": 1,
                 	"name": "changed name",
                 	"json": "[{}]",
                 	"path": "/json/1/changed-name"
                 }
                 """;
+        Long jsonId = 2L;
 
         given()
                 .header("Authorization", "Bearer " + adminJwt)
@@ -447,7 +454,7 @@ class JCManagementControllerTest {
                 .contentType(ContentType.JSON)
                 .body(jsonDto)
                 .when()
-                .patch("/api/v1/management/json")
+                .patch("/api/v1/management/json/" + jsonId)
                 .then()
                 .statusCode(HttpStatus.NO_CONTENT.value());
         given()
@@ -455,10 +462,10 @@ class JCManagementControllerTest {
                 .and().header("Accept-Language", "es")
                 .contentType(ContentType.JSON)
                 .when()
-                .get("/api/v1/management/json/{id}", 1)
+                .get("/api/v1/management/json/{id}", jsonId)
                 .then()
                 .statusCode(HttpStatus.OK.value())
-                .body("id", equalTo(1))
+                .body("id", equalTo(jsonId.intValue()))
                 .body("name", equalTo("changed name"))
                 .body("json", equalTo("[{}]"))
                 .body("path", equalTo("/json/1/changed-name"));
@@ -469,12 +476,12 @@ class JCManagementControllerTest {
     void testUpdateNonExistentJsonContent() {
         String jsonDto = """
                 {
-                	"id": 999,
                 	"name": "changed name",
                 	"json": "[{}]",
                 	"path": "/json/999/nonexistent"
                 }
                 """;
+        long jsonId = 999L;
 
         given()
                 .header("Authorization", "Bearer " + adminJwt)
@@ -482,7 +489,7 @@ class JCManagementControllerTest {
                 .contentType(ContentType.JSON)
                 .body(jsonDto)
                 .when()
-                .patch("/api/v1/management/json")
+                .patch("/api/v1/management/json/" + jsonId)
                 .then()
                 .statusCode(HttpStatus.NOT_FOUND.value());
     }
@@ -490,15 +497,15 @@ class JCManagementControllerTest {
     @Test
     @Order(12)
     void testUpdateExistingJsonContentWithInvalidData() {
-        String jsonDto = "{ 'id': 1 , 'name': '', 'json': '{}', 'path': '/json/1/invalid' }"; // Assuming 'name' cannot be empty
-
+        String jsonDto = "{'name': '', 'json': '{}', 'path': '/json/1/invalid' }"; // Assuming 'name' cannot be empty
+        long jsonId = 1L;
         given()
                 .header("Authorization", "Bearer " + adminJwt)
                 .and().header("Accept-Language", "es")
                 .contentType(ContentType.JSON)
                 .body(jsonDto)
                 .when()
-                .patch("/api/v1/management/json")
+                .patch("/api/v1/management/json/" + jsonId)
                 .then()
                 .statusCode(HttpStatus.BAD_REQUEST.value());
     }

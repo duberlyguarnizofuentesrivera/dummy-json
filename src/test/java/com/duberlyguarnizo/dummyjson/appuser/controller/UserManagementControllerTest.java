@@ -80,7 +80,6 @@ class UserManagementControllerTest {
                              @Autowired PasswordEncoder pwEncoder) {
         userRepository.deleteAll();
         AppUser supervisor = userRepository.save(AppUser.builder()
-                .id(1000L)
                 .names("admin user")
                 .email("adminemail@admin.com")
                 .username("admin")
@@ -92,7 +91,7 @@ class UserManagementControllerTest {
                 .build()
         );
         supervisorJwt = jwtUtil.generateToken(supervisor);
-        tokenService.saveToken(supervisorJwt, 1000L);
+        tokenService.saveToken(supervisorJwt, supervisor.getId());
         RestAssuredMockMvc.webAppContextSetup(context);
 
     }
@@ -307,6 +306,7 @@ class UserManagementControllerTest {
     @DisplayName("User GET with valid id returns correct manager")
     @Order(5)
     void getUserById() {
+
         for (Long id : idList) {
             given()
                     .log()
@@ -362,7 +362,6 @@ class UserManagementControllerTest {
 
         //change data for that manager
         AppUserRegistrationDto registration = AppUserRegistrationDto.builder()
-                .id(user.getId()) //PUT requires to provide ID field
                 .names(newUserNames)
                 .idCard(newUserIdCard)
                 .email(newUserEmail)
@@ -378,7 +377,7 @@ class UserManagementControllerTest {
                 .body(registration)
                 .contentType(ContentType.JSON)
                 .and().header("Accept-Language", "es")
-                .patch("/api/v1/management/users")
+                .patch("/api/v1/management/users/{id}", user.getId())
                 .then()
                 .statusCode(HttpStatus.NO_CONTENT.value());
 
@@ -408,7 +407,6 @@ class UserManagementControllerTest {
     @Order(8)
     void updateManagerWithInvalidData() {
         AppUserRegistrationDto registrationOne = AppUserRegistrationDto.builder()
-                .id(987L) //PUT requires to provide ID field,
                 .names("") //empty name
                 .idCard("") //empty idCard
                 .email("invalid-email$#")
@@ -424,7 +422,7 @@ class UserManagementControllerTest {
                 .body(registrationOne)
                 .contentType(ContentType.JSON)
                 .and().header("Accept-Language", "es")
-                .patch("/api/v1/management/users")
+                .patch("/api/v1/management/users/{id}", 987)
                 .then()
                 .statusCode(HttpStatus.BAD_REQUEST.value())
                 .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
@@ -435,7 +433,6 @@ class UserManagementControllerTest {
     @Order(9)
     void updateManagerWithValidDataButInvalidRole() {
         AppUserRegistrationDto registrationOne = AppUserRegistrationDto.builder()
-                .id(idList.get(5)) //PATCH requires to provide ID field in this case
                 .names(faker.name().fullName())
                 .username(faker.name().username())
                 .idCard(faker.numerify("########"))
@@ -450,7 +447,7 @@ class UserManagementControllerTest {
                 .body(registrationOne)
                 .contentType(ContentType.JSON)
                 .and().header("Accept-Language", "es")
-                .patch("/api/v1/management/users")
+                .patch("/api/v1/management/users/{id}", idList.get(5))
                 .then()
                 .statusCode(HttpStatus.BAD_REQUEST.value())
                 .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));
@@ -473,18 +470,15 @@ class UserManagementControllerTest {
 
         //Create a registrationDto with the username, idCard and email of the first manager and the id of the second manager
         AppUserRegistrationDto dto1 = AppUserRegistrationDto.builder()
-                .id(secondUserId)
                 .names(faker.name().fullName())
                 .username(existingManager.getUsername())
                 .idCard(faker.numerify("########"))
                 .build();
         AppUserRegistrationDto dto2 = AppUserRegistrationDto.builder()
-                .id(secondUserId)
                 .names(faker.name().fullName())
                 .idCard(existingManager.getIdCard())
                 .build();
         AppUserRegistrationDto dto3 = AppUserRegistrationDto.builder()
-                .id(secondUserId)
                 .names(faker.name().fullName())
                 .email(existingManager.getEmail())
                 .build();
@@ -498,7 +492,7 @@ class UserManagementControllerTest {
                     .body(dto)
                     .contentType(ContentType.JSON)
                     .and().header("Accept-Language", "es")
-                    .patch("/api/v1/management/users")
+                    .patch("/api/v1/management/users/{id}", secondUserId)
                     .then()
                     .statusCode(HttpStatus.BAD_REQUEST.value())
                     .body("status", equalTo(HttpStatus.BAD_REQUEST.value()));

@@ -27,7 +27,6 @@ import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
 import com.duberlyguarnizo.dummyjson.security.JwtUtil;
 import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
-import net.datafaker.Faker;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -59,11 +58,14 @@ class JCAuthenticatedControllerTest {
             .withUsername("tc_user")
             .withPassword("tc_password")
             .withDatabaseName("tc_db");
-    private static final List<Long> idList = new ArrayList<>(); //container for id's of originally created managers
-    static Faker faker = new Faker();
+    private static final List<Long> jcIdList = new ArrayList<>(); //container for id's of originally created managers
     private static String superJwt;
     private static String adminJwt;
     private static String clientJwt;
+
+    private static Long adminUserId;
+    private static Long supervisorUserId;
+    private static Long clientUserId;
 
     @DynamicPropertySource
     public static void properties(DynamicPropertyRegistry registry) {
@@ -82,7 +84,6 @@ class JCAuthenticatedControllerTest {
                              @Autowired PasswordEncoder pwEncoder) {
         //create an ADMIN user
         AppUser adminUser = userRepository.save(AppUser.builder()
-                .id(1L)
                 .names("admin user")
                 .email("adminemail@admin.com")
                 .username("admin")
@@ -93,8 +94,8 @@ class JCAuthenticatedControllerTest {
                 .locked(false)
                 .build()
         );
+        adminUserId = adminUser.getId();
         AppUser supervisorUser = userRepository.save(AppUser.builder()
-                .id(2L)
                 .names("supervisor user")
                 .email("supervisor@supervisor.com")
                 .username("supervisor")
@@ -105,10 +106,9 @@ class JCAuthenticatedControllerTest {
                 .locked(false)
                 .build()
         );
-
+        supervisorUserId = supervisorUser.getId();
         //create an AppUser with role USER
         AppUser clientUser = userRepository.save(AppUser.builder()
-                .id(3L)
                 .names("client user")
                 .email("clientmail@client.com")
                 .username("client")
@@ -119,7 +119,7 @@ class JCAuthenticatedControllerTest {
                 .locked(false)
                 .build()
         );
-
+        clientUserId = clientUser.getId();
         adminJwt = jwtUtil.generateToken(adminUser);
         tokenService.saveToken(adminJwt, adminUser.getId());
         superJwt = jwtUtil.generateToken(supervisorUser);
@@ -183,12 +183,12 @@ class JCAuthenticatedControllerTest {
                 .build();
 
         setUpJcRepository.deleteAll(); //empty the repo before, in case some info remains
-        jc1.setCreatedBy(3L);
-        jc2.setCreatedBy(3L);
-        jc3.setCreatedBy(3L);
-        idList.add(setUpJcRepository.save(jc1).getId());
-        idList.add(setUpJcRepository.save(jc2).getId());
-        idList.add(setUpJcRepository.save(jc3).getId());
+        jc1.setCreatedBy(clientUserId);
+        jc2.setCreatedBy(clientUserId);
+        jc3.setCreatedBy(clientUserId);
+        jcIdList.add(setUpJcRepository.save(jc1).getId());
+        jcIdList.add(setUpJcRepository.save(jc2).getId());
+        jcIdList.add(setUpJcRepository.save(jc3).getId());
     }
 
     @Test
@@ -196,7 +196,7 @@ class JCAuthenticatedControllerTest {
     @Order(0)
     void getJsonContentDetail() {
         //test exising ID
-        var idToGet = idList.get(0);
+        var idToGet = jcIdList.get(0);
         given()
                 .log()
                 .ifValidationFails()
@@ -306,14 +306,13 @@ class JCAuthenticatedControllerTest {
     @Order(3)
     void updateJsonContentDetail() {
 
-        Long idToUpdate = idList.get(0); // Modify as necessary
+        Long idToUpdate = jcIdList.get(0); // Modify as necessary
         String updatedJsonContent = """
                 {
-                  "id": %d,
                   "name": "Updated Json Content",
                   "json": "{'key': 'value'}",
                   "path": "/json/4/updated-json-content"
-                }""".formatted(idToUpdate);
+                }""";
 
         given()
                 .log()
@@ -323,7 +322,7 @@ class JCAuthenticatedControllerTest {
                 .contentType(ContentType.JSON)
                 .body(updatedJsonContent)
                 .when()
-                .patch("/api/v1/authenticated/json")
+                .patch("/api/v1/authenticated/json/" + idToUpdate)
                 .then()
                 .statusCode(HttpStatus.NO_CONTENT.value());
 
@@ -349,7 +348,7 @@ class JCAuthenticatedControllerTest {
     @Order(4)
     void deleteJsonContentDetail() {
 
-        Long idToDelete = idList.get(0); // Update index to choose id to delete
+        Long idToDelete = jcIdList.get(0); // Update index to choose id to delete
 
         given()
                 .log()

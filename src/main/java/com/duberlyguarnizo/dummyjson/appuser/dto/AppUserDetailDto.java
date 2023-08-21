@@ -22,6 +22,9 @@ import com.duberlyguarnizo.dummyjson.appuser.AppUser;
 import com.duberlyguarnizo.dummyjson.appuser.AppUserRole;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 import lombok.Value;
 
 import java.io.Serial;
@@ -32,6 +35,9 @@ import java.time.LocalDateTime;
  * DTO for {@link AppUser}
  */
 @Value
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor(force = true)
 public class AppUserDetailDto implements Serializable {
     Long createdBy;
     Long modifiedBy;

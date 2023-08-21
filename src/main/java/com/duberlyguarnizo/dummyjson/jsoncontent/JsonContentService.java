@@ -18,6 +18,7 @@
 
 package com.duberlyguarnizo.dummyjson.jsoncontent;
 
+import com.duberlyguarnizo.dummyjson.appuser.AppUserRepository;
 import com.duberlyguarnizo.dummyjson.auditing.CustomAuditorAware;
 import com.duberlyguarnizo.dummyjson.exceptions.IdNotFoundException;
 import com.duberlyguarnizo.dummyjson.exceptions.NotOwnedObjectException;
@@ -28,7 +29,7 @@ import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentDetailDto;
 import com.duberlyguarnizo.dummyjson.jsoncontent.dto.JsonContentMapper;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
 import jakarta.validation.Valid;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,18 +37,20 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
-@Log
+@Slf4j
 @Service
 public class JsonContentService {
 
     private final JsonContentRepository repository;
+    private final AppUserRepository appUserRepository;
     private final JsonContentMapper mapper;
     private final CustomAuditorAware auditorAware;
     private final ControllerUtils utils;
 
 
-    public JsonContentService(JsonContentRepository repository, JsonContentMapper mapper, CustomAuditorAware auditorAware, ControllerUtils utils) {
+    public JsonContentService(JsonContentRepository repository, AppUserRepository appUserRepository, JsonContentMapper mapper, CustomAuditorAware auditorAware, ControllerUtils utils) {
         this.repository = repository;
+        this.appUserRepository = appUserRepository;
         this.mapper = mapper;
         this.auditorAware = auditorAware;
 
@@ -72,9 +75,11 @@ public class JsonContentService {
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public Page<JsonContentBasicDto> getAllByUserId(Long id, Pageable page) {
-        var userExist = repository.existsById(id);
+        var userExist = appUserRepository.existsById(id);
         if (!userExist) {
-            throw new IdNotFoundException("user with id" + id + "does not exist!"); //TODO: localize this
+            log.warn("number of users: " + repository.count());
+            repository.findAll().forEach(element -> log.warn("element with id: " + element.getId()));
+            throw new IdNotFoundException("user with id " + id + " does not exist!"); //TODO: localize this
         }
         var jsonList = repository.findAllByCreatedBy(id, page);
         return jsonList.map(mapper::toBasicDto);
@@ -117,16 +122,16 @@ public class JsonContentService {
     }
 
     @PreAuthorize("isAuthenticated()")
-    public void updateOwnJsonContent(@Valid JsonContentCreationDto jsonDto) {
+    public void updateOwnJsonContent(Long jsonId, @Valid JsonContentCreationDto jsonDto) {
         //We could use @PostAuthorize, but that would remove our ability to throw ProblemDetail exceptions
         var currentAuditorId = auditorAware
                 .getCurrentAuditor()
                 .orElseThrow(() -> new AccessDeniedException(utils.getMessage("error_auditor_empty")));
 
         var jsonContent = repository
-                .findById(jsonDto.getId())
+                .findById(jsonId)
                 .orElseThrow(() -> new IdNotFoundException(
-                        utils.getMessage("exception_id_not_found_json_detail", new Long[]{jsonDto.getId()})));
+                        utils.getMessage("exception_id_not_found_json_detail", new Long[]{jsonId})));
         if (!jsonContent.getCreatedBy().equals(currentAuditorId)) {
             throw new NotOwnedObjectException(utils.getMessage("error_update_not_the_owner"));
         }
@@ -144,12 +149,12 @@ public class JsonContentService {
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
-    public void updateAnyJsonContent(@Valid JsonContentCreationDto jsonDto) {
+    public void updateAnyJsonContent(Long jsonId, @Valid JsonContentCreationDto jsonDto) {
         //We could use @PostAuthorize, but that would remove our ability to throw ProblemDetail exceptions
         var jsonContent = repository
-                .findById(jsonDto.getId())
+                .findById(jsonId)
                 .orElseThrow(() -> new IdNotFoundException
-                        (utils.getMessage("exception_id_not_found_json_detail", new Long[]{jsonDto.getId()})));
+                        (utils.getMessage("exception_id_not_found_json_detail", new Long[]{jsonId})));
         var updatedJson = mapper.partialUpdate(jsonDto, jsonContent);
         repository.save(updatedJson);
     }

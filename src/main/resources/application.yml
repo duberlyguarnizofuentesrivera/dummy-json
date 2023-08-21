@@ -23,9 +23,14 @@ server:
 
 logging:
   level:
-    org.springframework.security: trace
+    org.springframework.web: debug
+    org.springframework.security: debug
+
 
 jwt_key: ${JWT_KEY}
 hostname: ${HOST_NAME}
+firstAdmin:
+  username: ${FIRST_ADMIN_USERNAME}
+  password: ${FIRST_ADMIN_PASSWORD}
 
 

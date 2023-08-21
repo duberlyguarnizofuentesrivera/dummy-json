@@ -31,6 +31,7 @@ import com.duberlyguarnizo.dummyjson.jwt_token.JwtTokenService;
 import com.duberlyguarnizo.dummyjson.util.ControllerUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +44,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppUserService {
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
@@ -59,8 +61,8 @@ public class AppUserService {
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public AppUserDetailDto getAppUserById(Long id) {
-        return mapper.toDetailDto(
-                findAppUserById(id, false));
+        AppUser result = findAppUserById(id, false);
+        return mapper.toDetailDto(result);
     }
 
 
@@ -105,24 +107,46 @@ public class AppUserService {
         return saveAppUserAndGetId(registrationDto);
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')") //only admin user can edit users
-    public void partialUpdateManager(AppUserRegistrationDto registrationDto) {
+    @PreAuthorize("hasAuthority('ADMIN')") //only admin user can edit managers
+    public void partialUpdateManager(Long userId, AppUserRegistrationDto registrationDto) {
         if (registrationDto.getRole() != AppUserRole.ADMIN && registrationDto.getRole() != AppUserRole.SUPERVISOR) {
             throw new InvalidFieldValueException("The managers can only have ADMIN or SUPERVISOR role");//TODO: translate this
         }
-        var manager = findAppUserById(registrationDto.getId(), true);
-        var updatedManager = mapper.partialUpdate(registrationDto, manager);
-        appUserRepository.save(updatedManager);
+        var manager = findAppUserById(userId, true);
+        manager = mapper.partialUpdate(registrationDto, manager);
+        if (registrationDto.getPassword() != null) {
+            manager.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
+        }
+        appUserRepository.save(manager);
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')") //only admin user can edit users
-    public void partialUpdateUser(AppUserRegistrationDto registrationDto) {
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')") //only admin and supervisors user can edit users
+    public void partialUpdateUser(Long userId, AppUserRegistrationDto registrationDto) {
         if (registrationDto.getRole() == AppUserRole.ADMIN || registrationDto.getRole() == AppUserRole.SUPERVISOR) {
             throw new InvalidFieldValueException("The users cannot have ADMIN or SUPERVISOR role");//TODO: translate this
         }
-        var user = findAppUserById(registrationDto.getId(), false);
-        var updatedManager = mapper.partialUpdate(registrationDto, user);
-        appUserRepository.save(updatedManager);
+        var user = findAppUserById(userId, false);
+        user = mapper.partialUpdate(registrationDto, user);
+        if (registrationDto.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
+        }
+        appUserRepository.save(user);
+    }
+
+    @PreAuthorize("hasAnyAuthority('USER')") //only USER role can edit own user (current user)
+    public void partialUpdateOwnUser(AppUserRegistrationDto registrationDto) {
+        if (registrationDto.getRole() == AppUserRole.ADMIN || registrationDto.getRole() == AppUserRole.SUPERVISOR) {
+            throw new InvalidFieldValueException("The users cannot have ADMIN or SUPERVISOR role");//TODO: translate this
+        }
+        var currentAuditorId = auditorAware.getCurrentAuditor();
+        if (currentAuditorId.isPresent()) {
+            var user = findAppUserById(currentAuditorId.get(), false);
+            user = mapper.partialUpdate(registrationDto, user);
+            if (registrationDto.getPassword() != null) {
+                user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
+            }
+            appUserRepository.save(user);
+        }
     }
 
     @PreAuthorize("hasAuthority('ADMIN')") //only admin user can delete users
@@ -202,13 +226,22 @@ public class AppUserService {
         var currentAuditor = auditorAware.getCurrentAuditor();
         var appUser = findAppUserById(id, false);
         if (appUser.getRole() != AppUserRole.ADMIN
-                && appUser.getRole() != AppUserRole.SUPERVISOR
-                && currentAuditor.isPresent()) {
+            && appUser.getRole() != AppUserRole.SUPERVISOR
+            && currentAuditor.isPresent()) {
             appUser.setActive(false);
             appUserRepository.save(appUser);
             jwtService.revokeAllUserTokensByUserId(appUser.getId());
         } else {
             throw new AccessDeniedException(utils.getMessage("error_deactivate_user"));
+        }
+    }
+
+    public AppUserDetailDto getCurrentUser() {
+        var currentAuditorId = auditorAware.getCurrentAuditor();
+        if (currentAuditorId.isEmpty()) {
+            throw new AccessDeniedException(utils.getMessage("error_auditor_empty"));
+        } else {
+            return mapper.toDetailDto(findAppUserById(currentAuditorId.get(), false));
         }
     }
 
@@ -226,6 +259,11 @@ public class AppUserService {
             i18n = "exception_id_not_found_manager_detail";
         }
         final String i18nString = i18n;
+
+        appUserRepository.findAll().forEach(user -> log.warn("Usuario encontrado con ID: {}", user.getId()));
+        String message = appUserRepository.existsById(id) ? "Si: " : "No";
+        log.warn("Existe el usuario buscado con ID: {}? Respuesta: {}", id, message);
+
         return appUserRepository
                 .findById(id)
                 .orElseThrow(() -> new IdNotFoundException(
@@ -241,8 +279,10 @@ public class AppUserService {
         try {
             return appUserRepository.save(convertedManager).getId();
         } catch (IllegalArgumentException e) {
+            log.warn("Invalid user: {}", e.getMessage());
             throw new RepositoryException(utils.getMessage("exception_repository_save_error_invalid_user"));
         } catch (OptimisticLockingFailureException e) {
+            log.warn("Optimistic locking error: {}", e.getMessage());
             throw new RepositoryException(utils.getMessage("exception_repository_save_error_optimistic_lock"));
         }
     }

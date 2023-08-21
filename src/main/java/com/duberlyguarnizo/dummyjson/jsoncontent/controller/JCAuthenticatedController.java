@@ -71,9 +71,9 @@ public class JCAuthenticatedController {
         return new ResponseEntity<>(id, HttpStatus.CREATED);
     }
 
-    @PatchMapping
-    public ResponseEntity<Void> updateJsonContentDetail(@Valid @RequestBody JsonContentCreationDto jsonDto) {
-        service.updateOwnJsonContent(jsonDto);
+    @PatchMapping("/{id}")
+    public ResponseEntity<Void> updateJsonContentDetail(@PathVariable Long id, @Valid @RequestBody JsonContentCreationDto jsonDto) {
+        service.updateOwnJsonContent(id, jsonDto);
         return ResponseEntity.noContent().build();
     }
 
